@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import {
   TeamMember,
@@ -143,13 +143,7 @@ interface WebsiteContextType {
 const WebsiteContext = createContext<WebsiteContextType | undefined>(undefined);
 
 export function WebsiteProvider({ children }: { children: React.ReactNode }) {
-  const [data, setData] = useState<WebsiteData>(DEFAULT_WEBSITE_DATA);
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [isAdminLoginOpen, setAdminLoginOpen] = useState(false);
-  const [isAdminPanelOpen, setAdminPanelOpen] = useState(false);
-
-  // Load from localStorage on mount and sync with Firestore
-  useEffect(() => {
+  const [data, setData] = useState<WebsiteData>(() => {
     const savedData = localStorage.getItem('podcast_top_rank_media_data');
     if (savedData) {
       try {
@@ -171,54 +165,62 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
           }
           return obj;
         };
-        parsed = replaceOldRefs(parsed);
-        setData(parsed);
+        return replaceOldRefs(parsed);
       } catch (e) {
         console.error('Failed to parse saved website data, using defaults', e);
       }
     }
+    return DEFAULT_WEBSITE_DATA;
+  });
 
-    // Load fresh data from Firestore
-    const loadFromFirestore = async () => {
-      try {
-        const docRef = doc(db, 'configs', 'website_data');
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const cloudData = docSnap.data() as WebsiteData;
-          setData(cloudData);
-          localStorage.setItem('podcast_top_rank_media_data', JSON.stringify(cloudData));
-          console.log('Successfully synced data from Firestore');
-        } else {
-          console.log('No configurations found in Firestore. Seeding with default data...');
-          await setDoc(docRef, DEFAULT_WEBSITE_DATA);
-        }
-      } catch (error) {
-        console.error('Error fetching data from Firestore:', error);
-        
-        // Structured Firestore error formatting for system diagnostic tracing
-        const errMessage = error instanceof Error ? error.message : String(error);
-        const errInfo = {
-          error: errMessage,
-          operationType: 'get',
-          path: 'configs/website_data',
-          authInfo: {
-            userId: null,
-            email: null,
-            emailVerified: null,
-            isAnonymous: null,
-            tenantId: null
-          }
-        };
-        console.error('Firestore Error Info:', JSON.stringify(errInfo));
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [isAdminLoginOpen, setAdminLoginOpen] = useState(false);
+  const [isAdminPanelOpen, setAdminPanelOpen] = useState(false);
+
+  // Subscribe to real-time updates from Firestore
+  useEffect(() => {
+    const docRef = doc(db, 'configs', 'website_data');
+    
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const cloudData = docSnap.data() as WebsiteData;
+        setData(cloudData);
+        localStorage.setItem('podcast_top_rank_media_data', JSON.stringify(cloudData));
+        console.log('Real-time data synced from Firestore successfully');
+      } else {
+        console.log('No configurations found in Firestore. Seeding with default data...');
+        setDoc(docRef, DEFAULT_WEBSITE_DATA).catch((err) => {
+          console.error('Error seeding default data:', err);
+        });
       }
-    };
-
-    loadFromFirestore();
+    }, (error) => {
+      console.error('Error in Firestore real-time listener:', error);
+      
+      // Structured Firestore error formatting for system diagnostic tracing
+      const errMessage = error instanceof Error ? error.message : String(error);
+      const errInfo = {
+        error: errMessage,
+        operationType: 'listen',
+        path: 'configs/website_data',
+        authInfo: {
+          userId: null,
+          email: null,
+          emailVerified: null,
+          isAnonymous: null,
+          tenantId: null
+        }
+      };
+      console.error('Firestore Error Info (onSnapshot):', JSON.stringify(errInfo));
+    });
 
     const loggedIn = localStorage.getItem('podcast_top_rank_admin_logged_in');
     if (loggedIn === 'true') {
       setIsAdminLoggedIn(true);
     }
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const updateData = (newData: Partial<WebsiteData>) => {
