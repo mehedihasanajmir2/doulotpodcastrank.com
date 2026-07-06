@@ -2,6 +2,30 @@ import { Facebook, Linkedin, Instagram, Users } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useWebsiteData } from '../context/WebsiteContext';
 
+const formatSocialUrl = (url: string | undefined, defaultDomain?: string) => {
+  if (!url || url === '#') {
+    if (defaultDomain) {
+      const baseDomain = defaultDomain.split('/')[0];
+      return `https://${baseDomain}`;
+    }
+    return '#';
+  }
+  const trimmed = url.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  
+  if (trimmed.includes('.') || trimmed.includes('/')) {
+    return `https://${trimmed}`;
+  }
+  
+  if (defaultDomain) {
+    return `https://${defaultDomain}/${trimmed}`;
+  }
+  
+  return `https://${trimmed}`;
+};
+
 interface TeamSectionProps {
   onOpenConsultation: () => void;
 }
@@ -52,22 +76,27 @@ export default function TeamSection({ onOpenConsultation }: TeamSectionProps) {
                 {/* Floating Social Icons stacked vertically on the right margin of the card */}
                 <div className="absolute top-1/2 -translate-y-1/2 right-4 flex flex-col gap-2 z-10 transition-all duration-300">
                   <a
-                    href={member.socials.facebook}
+                    href={formatSocialUrl(member.socials.facebook, 'facebook.com')}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-purple hover:bg-indigo-600 text-white shadow-md hover:scale-110 transition-transform"
                     aria-label={`${member.name}'s Facebook`}
                   >
                     <Facebook className="h-4 w-4 fill-white" />
                   </a>
                   <a
-                    href={member.socials.linkedin}
+                    href={formatSocialUrl(member.socials.linkedin, 'linkedin.com/in')}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-purple hover:bg-indigo-600 text-white shadow-md hover:scale-110 transition-transform"
-
                     aria-label={`${member.name}'s LinkedIn`}
                   >
                     <Linkedin className="h-4 w-4 fill-white" />
                   </a>
                   <a
-                    href={member.socials.instagram}
+                    href={formatSocialUrl(member.socials.instagram, 'instagram.com')}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-purple hover:bg-indigo-600 text-white shadow-md hover:scale-110 transition-transform"
                     aria-label={`${member.name}'s Instagram`}
                   >

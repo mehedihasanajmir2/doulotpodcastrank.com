@@ -2,6 +2,30 @@ import { ArrowUpRight, ChevronUp, Mail, Phone, MapPin, Mic, TrendingUp } from 'l
 import Logo from './Logo';
 import { useWebsiteData } from '../context/WebsiteContext';
 
+const formatSocialUrl = (url: string | undefined, defaultDomain?: string) => {
+  if (!url || url === '#') {
+    if (defaultDomain) {
+      const baseDomain = defaultDomain.split('/')[0];
+      return `https://${baseDomain}`;
+    }
+    return '#';
+  }
+  const trimmed = url.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  
+  if (trimmed.includes('.') || trimmed.includes('/')) {
+    return `https://${trimmed}`;
+  }
+  
+  if (defaultDomain) {
+    return `https://${defaultDomain}/${trimmed}`;
+  }
+  
+  return `https://${trimmed}`;
+};
+
 interface FooterProps {
   onOpenConsultation: () => void;
 }
@@ -18,9 +42,9 @@ export default function Footer({ onOpenConsultation }: FooterProps) {
     phone: contactInfo?.phone || '+880 1765-068860',
     copyright: contactInfo?.copyright || 'Copyright © 2026 Doulot Ali Gettop Growth, All rights reserved.',
     socials: {
-      facebook: contactInfo?.facebook || '#',
-      instagram: contactInfo?.instagram || '#',
-      twitter: contactInfo?.twitter || '#',
+      facebook: formatSocialUrl(contactInfo?.facebook, 'facebook.com'),
+      instagram: formatSocialUrl(contactInfo?.instagram, 'instagram.com'),
+      twitter: formatSocialUrl(contactInfo?.twitter, 'twitter.com'),
     }
   };
 
@@ -155,7 +179,12 @@ export default function Footer({ onOpenConsultation }: FooterProps) {
             <ul className="space-y-2 text-slate-400 text-xs sm:text-sm font-medium">
               {Object.entries(footer.socials).map(([name, url]) => (
                 <li key={name}>
-                  <a href={url} className="hover:text-white transition-colors capitalize">
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white transition-colors capitalize"
+                  >
                     {name}
                   </a>
                 </li>
