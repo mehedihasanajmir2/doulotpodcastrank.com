@@ -34,10 +34,10 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
           
           {/* Left Text Column */}
           <motion.div
-            initial={{ x: 120, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-            style={{ willChange: "transform, opacity" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+            style={{ willChange: "opacity" }}
             className="lg:col-span-6 space-y-6"
             id="hero-left-content"
           >
@@ -79,10 +79,10 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
 
           {/* Right Image Composition Column */}
           <motion.div
-            initial={{ x: 120, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
-            style={{ willChange: "transform, opacity" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.25 }}
+            style={{ willChange: "opacity" }}
             className="lg:col-span-6 relative flex justify-center lg:justify-end"
             id="hero-right-visual"
           >
