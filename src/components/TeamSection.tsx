@@ -39,7 +39,14 @@ export default function TeamSection({ onOpenConsultation }: TeamSectionProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
         {/* Section Header: Flex title, divider line and More Team Button */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-12">
+        <motion.div
+          initial={{ x: 120, opacity: 0 }}
+          whileInView={{ x: 0, opacity: 1 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
+          style={{ willChange: "transform, opacity" }}
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-12"
+        >
           <div className="flex-1 flex items-center gap-4">
             <h2 className="text-3xl font-bold font-display text-white tracking-tight shrink-0">
               Your Podcast Growth Team
@@ -53,7 +60,7 @@ export default function TeamSection({ onOpenConsultation }: TeamSectionProps) {
           >
             More Team
           </button>
-        </div>
+        </motion.div>
 
         {/* Members grid of 3 items */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-center">

@@ -33,7 +33,14 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
           
           {/* Left Text Column */}
-          <div className="lg:col-span-6 space-y-6" id="hero-left-content">
+          <motion.div
+            initial={{ x: 120, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+            style={{ willChange: "transform, opacity" }}
+            className="lg:col-span-6 space-y-6"
+            id="hero-left-content"
+          >
             {/* Top Gradient Divider Line */}
             <div className="flex items-center gap-2">
               <div className="h-1 w-16 rounded-full bg-gradient-to-r from-brand-purple to-brand-cyan" />
@@ -68,10 +75,17 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
                 <span>{hero.statBadgeText}</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Right Image Composition Column */}
-          <div className="lg:col-span-6 relative flex justify-center lg:justify-end" id="hero-right-visual">
+          <motion.div
+            initial={{ x: 120, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+            style={{ willChange: "transform, opacity" }}
+            className="lg:col-span-6 relative flex justify-center lg:justify-end"
+            id="hero-right-visual"
+          >
             
 
 
@@ -149,7 +163,7 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
               <div className="absolute -left-6 -top-6 h-24 w-24 border-2 border-dashed border-brand-purple/20 rounded-full -z-10 animate-spin [animation-duration:20s]" />
               <div className="absolute -right-6 -bottom-6 h-36 w-36 border-2 border-dashed border-brand-cyan/20 rounded-full -z-10 animate-spin [animation-duration:35s]" />
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
