@@ -56,67 +56,87 @@ export default function TeamSection({ onOpenConsultation }: TeamSectionProps) {
         </div>
 
         {/* Members grid of 3 items */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-center">
-          {teamMembers.map((member) => (
-            <div
-              key={member.name}
-              className="group relative rounded-2xl overflow-hidden shadow-lg border border-slate-800 bg-[#0B132B] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl max-w-sm mx-auto w-full"
-              id={`team-member-${member.name.toLowerCase().replace(/\s+/g, '-')}`}
-            >
-              
-              {/* Aspect Ratio Container for Portait image */}
-              <div className="relative aspect-[4/5] overflow-hidden">
-                <img
-                  src={member.image}
-                  alt={`Portrait of ${member.name}, ${member.role} at PodcastTopRankMedia`}
-                  className="h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-105"
-                  referrerPolicy="no-referrer"
-                />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-center overflow-hidden">
+          {teamMembers.map((member, index) => {
+            const position = index % 3;
+            let initial = {};
+            
+            if (position === 0) {
+              // Left: Slide in from left
+              initial = { x: -60, opacity: 0 };
+            } else if (position === 1) {
+              // Middle: Slide up from bottom
+              initial = { y: 60, opacity: 0 };
+            } else {
+              // Right: Slide in from right
+              initial = { x: 60, opacity: 0 };
+            }
 
-                {/* Floating Social Icons stacked vertically on the right margin of the card */}
-                <div className="absolute top-1/2 -translate-y-1/2 right-4 flex flex-col gap-2 z-10 transition-all duration-300">
-                  <a
-                    href={formatSocialUrl(member.socials.facebook, 'facebook.com')}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-purple hover:bg-indigo-600 text-white shadow-md hover:scale-110 transition-transform"
-                    aria-label={`${member.name}'s Facebook`}
-                  >
-                    <Facebook className="h-4 w-4 fill-white" />
-                  </a>
-                  <a
-                    href={formatSocialUrl(member.socials.linkedin, 'linkedin.com/in')}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-purple hover:bg-indigo-600 text-white shadow-md hover:scale-110 transition-transform"
-                    aria-label={`${member.name}'s LinkedIn`}
-                  >
-                    <Linkedin className="h-4 w-4 fill-white" />
-                  </a>
-                  <a
-                    href={formatSocialUrl(member.socials.instagram, 'instagram.com')}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-purple hover:bg-indigo-600 text-white shadow-md hover:scale-110 transition-transform"
-                    aria-label={`${member.name}'s Instagram`}
-                  >
-                    <Instagram className="h-4 w-4" />
-                  </a>
+            return (
+              <motion.div
+                key={member.name}
+                initial={initial}
+                whileInView={{ x: 0, y: 0, opacity: 1 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1], delay: index * 0.1 }}
+                className="group relative rounded-2xl overflow-hidden shadow-lg border border-slate-800 bg-[#0B132B] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl max-w-sm mx-auto w-full"
+                id={`team-member-${member.name.toLowerCase().replace(/\s+/g, '-')}`}
+              >
+                
+                {/* Aspect Ratio Container for Portait image */}
+                <div className="relative aspect-[4/5] overflow-hidden">
+                  <img
+                    src={member.image}
+                    alt={`Portrait of ${member.name}, ${member.role} at PodcastTopRankMedia`}
+                    className="h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-105"
+                    referrerPolicy="no-referrer"
+                  />
+
+                  {/* Floating Social Icons stacked vertically on the right margin of the card */}
+                  <div className="absolute top-1/2 -translate-y-1/2 right-4 flex flex-col gap-2 z-10 transition-all duration-300">
+                    <a
+                      href={formatSocialUrl(member.socials.facebook, 'facebook.com')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-purple hover:bg-indigo-600 text-white shadow-md hover:scale-110 transition-transform"
+                      aria-label={`${member.name}'s Facebook`}
+                    >
+                      <Facebook className="h-4 w-4 fill-white" />
+                    </a>
+                    <a
+                      href={formatSocialUrl(member.socials.linkedin, 'linkedin.com/in')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-purple hover:bg-indigo-600 text-white shadow-md hover:scale-110 transition-transform"
+                      aria-label={`${member.name}'s LinkedIn`}
+                    >
+                      <Linkedin className="h-4 w-4 fill-white" />
+                    </a>
+                    <a
+                      href={formatSocialUrl(member.socials.instagram, 'instagram.com')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-purple hover:bg-indigo-600 text-white shadow-md hover:scale-110 transition-transform"
+                      aria-label={`${member.name}'s Instagram`}
+                    >
+                      <Instagram className="h-4 w-4" />
+                    </a>
+                  </div>
                 </div>
-              </div>
 
-              {/* Bottom glassmorphic/white overlay info card */}
-              <div className="absolute bottom-4 left-4 right-4 bg-slate-950/90 backdrop-blur-md rounded-xl p-4 shadow-md border border-slate-800 text-center transition-all duration-300 group-hover:border-purple-900/50">
-                <h3 className="font-display text-lg font-bold text-white leading-tight">
-                  {member.name}
-                </h3>
-                <p className="text-xs font-semibold text-brand-magenta mt-1 uppercase tracking-wider">
-                  {member.role}
-                </p>
-              </div>
+                {/* Bottom glassmorphic/white overlay info card */}
+                <div className="absolute bottom-4 left-4 right-4 bg-slate-950/90 backdrop-blur-md rounded-xl p-4 shadow-md border border-slate-800 text-center transition-all duration-300 group-hover:border-purple-900/50">
+                  <h3 className="font-display text-lg font-bold text-white leading-tight">
+                    {member.name}
+                  </h3>
+                  <p className="text-xs font-semibold text-brand-magenta mt-1 uppercase tracking-wider">
+                    {member.role}
+                  </p>
+                </div>
 
-            </div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
         
       </div>
