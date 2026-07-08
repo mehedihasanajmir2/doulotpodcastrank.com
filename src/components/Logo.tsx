@@ -57,7 +57,7 @@ export default function Logo({ className = '', iconOnly = false, size = 'md' }: 
       {/* High-Fidelity Image Logo Icon from the user's provided link */}
       <img
         src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiMckbHpPhrgQBNuqPg7Hd95sZ5vW44YCddXCN-6f5ShmWoolHDriYiYIPPs8qIT9d00yvopz94xckYA3RBxwvpyiWG4-hUsinwypPyHjO0w93t-UGLP57L0C1qJ2hBvV2zG4M4bnUf1Pp3S-Vc70zVShnPbLpMHts8tmkaBGxGg7b11Lkp1Rl08vr2XvyZ/s584/ChatGPT%20Image%20Jul%205,%202026,%2010_35_08%20PM.png"
-        alt="Doulot Ali / Gettop Growth Logo"
+        alt="Doulot Ali / Podcast Ranking Media Logo"
         className={`${iconSize} object-contain shrink-0 select-none`}
         referrerPolicy="no-referrer"
       />

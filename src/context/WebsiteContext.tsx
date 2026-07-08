@@ -64,26 +64,44 @@ export interface WebsiteData {
   };
 }
 
+const migrateWebsiteData = (obj: any): any => {
+  if (typeof obj === 'string') {
+    return obj
+      .replace(/PodcastTopRankMedia/g, 'Doulot Ali Podcast Ranking Media')
+      .replace(/Doulot Ali Gettop Growth/g, 'Doulot Ali Podcast Ranking Media')
+      .replace(/Gettop Growth/g, 'Podcast Ranking Media');
+  } else if (Array.isArray(obj)) {
+    return obj.map(migrateWebsiteData);
+  } else if (obj !== null && typeof obj === 'object') {
+    const res: any = {};
+    for (const key of Object.keys(obj)) {
+      res[key] = migrateWebsiteData(obj[key]);
+    }
+    return res;
+  }
+  return obj;
+};
+
 const DEFAULT_WEBSITE_DATA: WebsiteData = {
   logo: {
     textTop: 'Doulot Ali',
-    textBottom: 'Gettop Growth',
+    textBottom: 'Podcast Ranking Media',
   },
   hero: {
     tagline: 'Podcast SEO & Growth Agency',
     title: 'From Launch to Top Charts — We Make It Happen',
-    description: 'Doulot Ali Gettop Growth helps podcasters boost visibility, attract more listeners, and grow their audience with expert SEO and marketing strategies tailored for every platform.',
+    description: 'Doulot Ali Podcast Ranking Media helps podcasters boost visibility, attract more listeners, and grow their audience with expert SEO and marketing strategies tailored for every platform.',
     buttonText: 'Start Growing Today',
     statBadgeText: 'Join 200+ successful podcasters',
     imageLeft: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&q=80&w=600',
     imageRight: 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?auto=format&fit=crop&q=80&w=600',
   },
   about: {
-    label: 'About Doulot Ali Gettop Growth',
+    label: 'About Doulot Ali Podcast Ranking Media',
     title: 'The Growth Engine Behind Successful Podcasts.',
     subtitle: 'Helping Podcasters Get Found, Heard, and Ranked',
     paragraphs: [
-      'Doulot Ali Gettop Growth was built with one clear goal: to help podcasters grow through smart SEO and strategic marketing. We focus on increasing visibility across major podcast platforms so your show reaches the right audience at the right time.',
+      'Doulot Ali Podcast Ranking Media was built with one clear goal: to help podcasters grow through smart SEO and strategic marketing. We focus on increasing visibility across major podcast platforms so your show reaches the right audience at the right time.',
       'From keyword optimization and metadata strategy to promotion and growth planning, we use proven techniques that improve discoverability and drive real listener growth. Whether you\'re launching a new podcast or scaling an existing one, we help position your show to stand out in a crowded market.',
       'We don\'t believe in guesswork. We believe in strategy, data, and results.'
     ],
@@ -123,7 +141,7 @@ const DEFAULT_WEBSITE_DATA: WebsiteData = {
     facebook: '#',
     instagram: '#',
     twitter: '#',
-    copyright: 'Copyright © 2026 Doulot Ali Gettop Growth, All rights reserved.',
+    copyright: 'Copyright © 2026 Doulot Ali Podcast Ranking Media, All rights reserved.',
   },
 };
 
@@ -148,24 +166,7 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
     if (savedData) {
       try {
         let parsed = JSON.parse(savedData);
-        // Robust automatic migration of legacy names to Doulot Ali Gettop Growth
-        const replaceOldRefs = (obj: any): any => {
-          if (typeof obj === 'string') {
-            return obj
-              .replace(/PodcastTopRankMedia/g, 'Doulot Ali Gettop Growth')
-              .replace(/podcasttoprankmedia@gmail\.com/g, 'doulotaligettopgrowth@gmail.com');
-          } else if (Array.isArray(obj)) {
-            return obj.map(replaceOldRefs);
-          } else if (obj !== null && typeof obj === 'object') {
-            const res: any = {};
-            for (const key of Object.keys(obj)) {
-              res[key] = replaceOldRefs(obj[key]);
-            }
-            return res;
-          }
-          return obj;
-        };
-        return replaceOldRefs(parsed);
+        return migrateWebsiteData(parsed);
       } catch (e) {
         console.error('Failed to parse saved website data, using defaults', e);
       }
@@ -184,8 +185,9 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const cloudData = docSnap.data() as WebsiteData;
-        setData(cloudData);
-        localStorage.setItem('podcast_top_rank_media_data', JSON.stringify(cloudData));
+        const migratedData = migrateWebsiteData(cloudData);
+        setData(migratedData);
+        localStorage.setItem('podcast_top_rank_media_data', JSON.stringify(migratedData));
         console.log('Real-time data synced from Firestore successfully');
       } else {
         console.log('No configurations found in Firestore. Seeding with default data...');

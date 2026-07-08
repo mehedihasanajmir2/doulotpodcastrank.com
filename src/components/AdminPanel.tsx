@@ -103,7 +103,7 @@ export default function AdminPanel() {
             <Settings className="h-5 w-5 animate-spin-slow text-white" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-bold tracking-tight">Gettop Growth Admin Console</h2>
+            <h2 className="text-base sm:text-lg font-bold tracking-tight">Podcast Ranking Media Admin Console</h2>
             <p className="text-xs text-slate-400 hidden sm:block">Customize your website's content instantly</p>
           </div>
         </div>
@@ -234,7 +234,7 @@ export default function AdminPanel() {
                         value={localLogo.textBottom}
                         onChange={(e) => setLocalLogo({ ...localLogo, textBottom: e.target.value })}
                         className="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-2.5 text-sm focus:border-violet-500 focus:outline-none"
-                        placeholder="e.g.: Gettop Growth"
+                        placeholder="e.g.: Podcast Ranking Media"
                       />
                     </div>
                   </div>
