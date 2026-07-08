@@ -35,7 +35,7 @@ export default function TeamSection({ onOpenConsultation }: TeamSectionProps) {
   const { teamMembers } = data;
 
   return (
-    <section id="team" className="py-20 bg-transparent">
+    <section id="team" className="py-20 bg-transparent overflow-x-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
         {/* Section Header: Flex title, divider line and More Team Button */}
@@ -56,7 +56,7 @@ export default function TeamSection({ onOpenConsultation }: TeamSectionProps) {
         </div>
 
         {/* Members grid of 3 items */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-center overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-center">
           {teamMembers.map((member, index) => {
             // Every card slides in smoothly from the far right of the screen (right to left)
             const initial = { x: 120, opacity: 0 };
@@ -67,9 +67,14 @@ export default function TeamSection({ onOpenConsultation }: TeamSectionProps) {
                 initial={initial}
                 whileInView={{ x: 0, opacity: 1 }}
                 viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: index * 0.4 }}
+                whileHover={{ y: -8 }}
+                transition={{
+                  x: { duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: index * 0.35 },
+                  opacity: { duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: index * 0.35 },
+                  y: { duration: 0.3, ease: "easeOut" }
+                }}
                 style={{ willChange: "transform, opacity" }}
-                className="group relative rounded-2xl overflow-hidden shadow-lg border border-slate-800 bg-[#0B132B] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl max-w-sm mx-auto w-full"
+                className="group relative rounded-2xl overflow-hidden shadow-lg border border-slate-800 bg-[#0B132B] hover:shadow-xl max-w-sm mx-auto w-full transition-shadow duration-300"
                 id={`team-member-${member.name.toLowerCase().replace(/\s+/g, '-')}`}
               >
                 
