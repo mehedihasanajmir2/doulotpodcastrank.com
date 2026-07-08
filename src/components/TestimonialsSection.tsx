@@ -30,8 +30,13 @@ export default function TestimonialsSection() {
   const slide1 = testimonials[activeSlide % total] || { id: 't1', name: 'User', role: 'Podcaster', quote: 'Great service!', stars: 5, avatar: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=200' };
   const slide2 = testimonials[(activeSlide + 1) % total] || slide1;
 
-  // Display 2 cards at a time on desktop, 1 on mobile
-  const visibleTestimonials = [slide1, slide2];
+  // Display up to 2 cards at a time on desktop, 1 on mobile, avoiding duplicates
+  const visibleTestimonials = (() => {
+    if (testimonials.length === 0) return [];
+    if (testimonials.length === 1) return [slide1];
+    if (slide1.id === slide2.id) return [slide1];
+    return [slide1, slide2];
+  })();
 
   const handleDotClick = (idx: number) => {
     setActiveSlide(idx);
@@ -44,13 +49,16 @@ export default function TestimonialsSection() {
       return;
     }
 
+    // Pick a random avatar from presets automatically so they don't have to choose
+    const randomAvatar = AVATAR_PRESETS[Math.floor(Math.random() * AVATAR_PRESETS.length)];
+
     const newTestimonial = {
       id: Date.now(),
       name: newName.trim(),
       role: newRole.trim(),
       quote: newQuote.trim(),
       stars: newStars,
-      avatar: newAvatar
+      avatar: randomAvatar
     };
 
     const updatedTestimonials = [...testimonials, newTestimonial];
@@ -140,7 +148,7 @@ export default function TestimonialsSection() {
                 <AnimatePresence mode="wait">
                   {visibleTestimonials.map((test, idx) => (
                     <motion.div
-                      key={test.id}
+                      key={`${test.id}-${idx}`}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -350,37 +358,6 @@ export default function TestimonialsSection() {
                             placeholder="Write your growth experience here..."
                             className="w-full rounded-xl bg-slate-950 border border-slate-800 focus:border-brand-purple/60 focus:ring-1 focus:ring-brand-purple px-3 py-2 text-xs text-slate-200 placeholder-slate-600 outline-none transition-all resize-none"
                           />
-                        </div>
-
-                        {/* Avatar Preset Selection */}
-                        <div>
-                          <label className="block text-xs font-bold text-slate-300 mb-1.5">🎭 Choose Profile Photo</label>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {AVATAR_PRESETS.map((avatarUrl, index) => (
-                              <button
-                                type="button"
-                                key={index}
-                                onClick={() => setNewAvatar(avatarUrl)}
-                                className={`relative h-9 w-9 rounded-full overflow-hidden border-2 transition-all duration-200 ${
-                                  newAvatar === avatarUrl
-                                    ? 'border-brand-purple scale-110 ring-2 ring-brand-purple/30'
-                                    : 'border-slate-800 hover:border-slate-600'
-                                }`}
-                              >
-                                <img
-                                  src={avatarUrl}
-                                  alt={`Avatar preset ${index + 1}`}
-                                  className="h-full w-full object-cover"
-                                  referrerPolicy="no-referrer"
-                                />
-                                {newAvatar === avatarUrl && (
-                                  <div className="absolute inset-0 bg-brand-purple/30 flex items-center justify-center">
-                                    <Check className="h-3.5 w-3.5 text-white font-bold" />
-                                  </div>
-                                )}
-                              </button>
-                            ))}
-                          </div>
                         </div>
 
                         <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800/60">
