@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWebsiteData } from '../context/WebsiteContext';
 import {
   X,
@@ -45,7 +45,26 @@ export default function AdminPanel() {
   const [localPricing, setLocalPricing] = useState(data.pricingPlans);
   const [localProcess, setLocalProcess] = useState(data.processSteps);
   const [localTestimonials, setLocalTestimonials] = useState(data.testimonials);
+  const [localTestimonialsImage, setLocalTestimonialsImage] = useState(data.testimonialsImage || 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=600');
   const [localContact, setLocalContact] = useState(data.contactInfo);
+
+  // Sync local states when admin panel opens or website data is loaded/changed
+  useEffect(() => {
+    if (isAdminPanelOpen) {
+      setLocalLogo(data.logo);
+      setLocalHero(data.hero);
+      setLocalAbout(data.about);
+      setLocalStats(data.stats);
+      setLocalTeam(data.teamMembers);
+      setLocalEpisodes(data.episodes);
+      setLocalCategories(data.categories);
+      setLocalPricing(data.pricingPlans);
+      setLocalProcess(data.processSteps);
+      setLocalTestimonials(data.testimonials);
+      setLocalTestimonialsImage(data.testimonialsImage || 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=600');
+      setLocalContact(data.contactInfo);
+    }
+  }, [isAdminPanelOpen, data]);
 
   if (!isAdminPanelOpen) return null;
 
@@ -61,6 +80,7 @@ export default function AdminPanel() {
       pricingPlans: localPricing,
       processSteps: localProcess,
       testimonials: localTestimonials,
+      testimonialsImage: localTestimonialsImage,
       contactInfo: localContact,
     });
     setSuccessMsg('All changes successfully saved!');
@@ -81,6 +101,7 @@ export default function AdminPanel() {
       setLocalPricing(data.pricingPlans);
       setLocalProcess(data.processSteps);
       setLocalTestimonials(data.testimonials);
+      setLocalTestimonialsImage(data.testimonialsImage || 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=600');
       setLocalContact(data.contactInfo);
       setSuccessMsg('Reset to default data completed!');
       setTimeout(() => setSuccessMsg(''), 4000);
@@ -772,110 +793,79 @@ export default function AdminPanel() {
             {/* Testimonials and Team Tab */}
             {activeTab === 'testimonials' && (
               <div className="space-y-6">
+                {/* Testimonial Section Main Photo */}
+                <div className="border border-slate-800 rounded-2xl bg-slate-900/30 p-6 space-y-4">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                      <span>🖼️ Testimonials Section Main Image</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mb-4">Edit the prominent side photo shown next to the "What they say about us" testimonial cards.</p>
+                    <ImageUploader
+                      value={localTestimonialsImage}
+                      onChange={(val) => setLocalTestimonialsImage(val)}
+                      label="🖼️ Section Side Image"
+                    />
+                  </div>
+                </div>
+
                 <div className="border border-slate-800 rounded-2xl bg-slate-900/30 p-6 space-y-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                     <div>
                       <h3 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
                         <span>💬 Client Reviews & Testimonials</span>
                       </h3>
-                      <p className="text-xs text-slate-400">Edit, add, or remove nice testimonials from your clients here.</p>
+                      <p className="text-xs text-slate-400">View your client reviews, reply to them, or delete reviews from your system.</p>
                     </div>
-                    <button
-                      onClick={() => {
-                        const newTest = {
-                          id: Date.now(),
-                          name: 'New Client Name',
-                          role: 'Founder / Creator',
-                          quote: 'Amazing service! Their work significantly amplified our brand growth.',
-                          stars: 5,
-                          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
-                        };
-                        setLocalTestimonials([...localTestimonials, newTest]);
-                      }}
-                      className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-full shadow-lg shadow-emerald-900/20 active:scale-95 transition-all"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>➕ Add New Review</span>
-                    </button>
                   </div>
 
                   <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
                     {localTestimonials.length === 0 ? (
-                      <div className="text-center py-6 text-slate-500 text-xs">No reviews found! Click the button above to add a review.</div>
+                      <div className="text-center py-6 text-slate-500 text-xs">No reviews found!</div>
                     ) : (
                       localTestimonials.map((test, idx) => (
-                        <div key={test.id} className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3 relative hover:border-violet-500/20 transition-all">
-                          <span className="text-xs font-bold text-violet-400">💬 Review #{idx + 1}</span>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-bold text-slate-300 mb-1">👤 Client Name (CLIENT NAME)</label>
-                              <input
-                                type="text"
-                                value={test.name}
-                                onChange={(e) => {
-                                  const updated = [...localTestimonials];
-                                  updated[idx].name = e.target.value;
-                                  setLocalTestimonials(updated);
-                                }}
-                                className="w-full rounded-lg bg-slate-950 border border-slate-800 px-3 py-1.5 text-xs font-bold text-white"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-bold text-slate-300 mb-1">💼 Role / Designation (ROLE / DESIGNATION)</label>
-                              <input
-                                type="text"
-                                value={test.role}
-                                onChange={(e) => {
-                                  const updated = [...localTestimonials];
-                                  updated[idx].role = e.target.value;
-                                  setLocalTestimonials(updated);
-                                }}
-                                className="w-full rounded-lg bg-slate-950 border border-slate-800 px-3 py-1.5 text-xs text-slate-200"
-                              />
+                        <div key={test.id} className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-4 relative hover:border-violet-500/20 transition-all">
+                          <div className="flex items-center justify-between border-b border-slate-800/40 pb-2">
+                            <span className="text-xs font-bold text-violet-400">💬 Review #{idx + 1}</span>
+                            <div className="flex items-center gap-1.5 bg-slate-950/80 px-2 py-1 rounded-md border border-slate-800 text-[10px] text-amber-400 font-bold">
+                              <span>{'★'.repeat(test.stars)}{'☆'.repeat(5 - test.stars)}</span>
+                              <span className="text-slate-400 font-normal">({test.stars}/5)</span>
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-bold text-slate-300 mb-1">⭐ Star Rating (STARS 1-5)</label>
-                              <input
-                                type="number"
-                                min="1"
-                                max="5"
-                                value={test.stars}
-                                onChange={(e) => {
-                                  const updated = [...localTestimonials];
-                                  updated[idx].stars = parseInt(e.target.value) || 5;
-                                  setLocalTestimonials(updated);
-                                }}
-                                className="w-full rounded-lg bg-slate-950 border border-slate-800 px-3 py-1.5 text-xs text-white font-bold"
-                              />
-                            </div>
-                            <div>
-                              <ImageUploader
-                                value={test.avatar}
-                                onChange={(val) => {
-                                  const updated = [...localTestimonials];
-                                  updated[idx].avatar = val;
-                                  setLocalTestimonials(updated);
-                                }}
-                                label="🖼️ Client Avatar"
-                              />
+                          {/* Read-only client info layout */}
+                          <div className="flex items-start gap-3 bg-slate-950/40 p-3 rounded-xl border border-slate-800/60">
+                            <img
+                              src={test.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'}
+                              alt={test.name}
+                              className="h-10 w-10 rounded-full object-cover border border-slate-700 shrink-0"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="space-y-1">
+                              <div className="text-xs font-bold text-white">{test.name}</div>
+                              <div className="text-[10px] text-slate-400 font-medium">{test.role}</div>
                             </div>
                           </div>
 
-                          <div>
-                            <label className="block text-xs font-bold text-slate-300 mb-1">✍️ Review Quote (CLIENT QUOTE)</label>
+                          {/* Client's quote (Read-only) */}
+                          <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-800/40 text-xs text-slate-300 italic leading-relaxed">
+                            “{test.quote}”
+                          </div>
+
+                          {/* Editable Reply Section */}
+                          <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-emerald-400 flex items-center gap-1">
+                              <span>💬 Your Admin Reply (Response)</span>
+                            </label>
                             <textarea
-                              rows={3}
-                              value={test.quote}
+                              rows={2}
+                              value={test.reply || ''}
                               onChange={(e) => {
                                 const updated = [...localTestimonials];
-                                updated[idx].quote = e.target.value;
+                                updated[idx] = { ...test, reply: e.target.value };
                                 setLocalTestimonials(updated);
                               }}
-                              className="w-full rounded-lg bg-slate-950 border border-slate-800 p-2.5 text-xs text-slate-300 leading-normal"
+                              placeholder="Write a professional response to this client review..."
+                              className="w-full rounded-lg bg-slate-950 border border-emerald-900/40 p-2.5 text-xs text-emerald-300 leading-normal focus:border-emerald-500 focus:outline-none placeholder:text-emerald-900/50"
                             />
                           </div>
 

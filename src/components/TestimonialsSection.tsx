@@ -87,7 +87,7 @@ export default function TestimonialsSection() {
           >
             <div className="relative rounded-2xl overflow-hidden shadow-2xl max-w-sm mx-auto lg:max-w-none border border-slate-800 bg-[#0B132B]">
               <img
-                src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=600"
+                src={data.testimonialsImage || "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=600"}
                 alt="Happy listener with headphones looking up and smiling"
                 className="w-full aspect-[4/5] object-cover opacity-90"
                 referrerPolicy="no-referrer"
@@ -160,6 +160,14 @@ export default function TestimonialsSection() {
                         <p className="text-xs sm:text-sm text-slate-300 leading-relaxed italic relative z-10">
                           “{test.quote}”
                         </p>
+
+                        {/* Admin Reply */}
+                        {test.reply && (
+                          <div className="mt-3 p-3 rounded-xl bg-violet-950/20 border border-violet-800/30 text-[11px] text-slate-300 leading-relaxed relative z-10 text-left">
+                            <span className="font-bold text-violet-400 block mb-0.5">💬 Admin Response:</span>
+                            {test.reply}
+                          </div>
+                        )}
                       </div>
 
                       {/* Author block */}

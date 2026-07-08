@@ -53,6 +53,7 @@ export interface WebsiteData {
   pricingPlans: PricingPlan[];
   processSteps: ProcessStep[];
   testimonials: Testimonial[];
+  testimonialsImage: string;
   contactInfo: {
     email: string;
     phone: string;
@@ -134,6 +135,7 @@ const DEFAULT_WEBSITE_DATA: WebsiteData = {
   pricingPlans: PRICING_PLANS,
   processSteps: PROCESS_STEPS,
   testimonials: TESTIMONIALS,
+  testimonialsImage: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=600',
   contactInfo: {
     email: 'doulotaligettopgrowth@gmail.com',
     phone: '+880 1765-068860',

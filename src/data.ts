@@ -42,6 +42,7 @@ export interface Testimonial {
   quote: string;
   stars: number;
   avatar: string;
+  reply?: string;
 }
 
 export const PLATFORMS = [
