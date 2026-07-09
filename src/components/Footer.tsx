@@ -246,14 +246,14 @@ export default function Footer({ onOpenConsultation }: FooterProps) {
         </div>
 
         {/* Bottom copyright row with chevron upward top scroll */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 text-xs text-slate-500 font-medium">
-          <p className="text-center sm:text-left">
+        <div className="relative flex flex-col sm:flex-row items-center justify-center gap-4 pt-8 text-xs text-slate-500 font-medium">
+          <p className="text-center">
             {footer.copyright}
           </p>
           
           <button
             onClick={() => handleScrollToSection('#home')}
-            className="flex h-9 w-9 items-center justify-center rounded-md bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all active:scale-95"
+            className="sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-md bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all active:scale-95"
             id="back-to-top-btn"
             aria-label="Back to top"
           >

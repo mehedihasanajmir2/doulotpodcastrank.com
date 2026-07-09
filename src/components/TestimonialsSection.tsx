@@ -172,7 +172,7 @@ export default function TestimonialsSection() {
                         {/* Admin Reply */}
                         {test.reply && (
                           <div className="mt-3 p-3 rounded-xl bg-violet-950/20 border border-violet-800/30 text-[11px] text-slate-300 leading-relaxed relative z-10 text-left">
-                            <span className="font-bold text-violet-400 block mb-0.5">💬 Admin Response:</span>
+                            <span className="font-bold text-violet-400 block mb-0.5">Admin Response:</span>
                             {test.reply}
                           </div>
                         )}
@@ -255,7 +255,7 @@ export default function TestimonialsSection() {
                       className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-600 to-brand-purple hover:from-violet-500 hover:to-brand-purple/90 text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-full shadow-lg shadow-purple-950/40 active:scale-95 transition-all"
                     >
                       <PenTool className="h-4 w-4" />
-                      <span>✍️ Write a Review</span>
+                      <span>Write a Review</span>
                     </button>
                   </motion.div>
                 ) : (
@@ -270,7 +270,7 @@ export default function TestimonialsSection() {
                   >
                     <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                       <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                        <span>✍️ Share Your Review</span>
+                        <span>Share Your Review</span>
                       </h3>
                       <button
                         type="button"
@@ -297,7 +297,7 @@ export default function TestimonialsSection() {
                       <>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-xs font-bold text-slate-300 mb-1">👤 Your Name</label>
+                            <label className="block text-xs font-bold text-slate-300 mb-1">Your Name</label>
                             <input
                               type="text"
                               required
@@ -309,7 +309,7 @@ export default function TestimonialsSection() {
                           </div>
 
                           <div>
-                            <label className="block text-xs font-bold text-slate-300 mb-1">💼 Role / Podcast</label>
+                            <label className="block text-xs font-bold text-slate-300 mb-1">Role / Podcast</label>
                             <input
                               type="text"
                               required
@@ -322,7 +322,7 @@ export default function TestimonialsSection() {
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold text-slate-300 mb-1">⭐ Star Rating</label>
+                          <label className="block text-xs font-bold text-slate-300 mb-1">Star Rating</label>
                           <div className="flex items-center gap-1.5 mt-1">
                             {[1, 2, 3, 4, 5].map((star) => (
                               <button
@@ -349,7 +349,7 @@ export default function TestimonialsSection() {
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold text-slate-300 mb-1">✍️ Review Comment</label>
+                          <label className="block text-xs font-bold text-slate-300 mb-1">Review Comment</label>
                           <textarea
                             required
                             rows={3}

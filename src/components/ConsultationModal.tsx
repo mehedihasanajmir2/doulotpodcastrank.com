@@ -1,6 +1,25 @@
-import React, { useState } from 'react';
-import { X, Send, Sparkles, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  X, 
+  Send, 
+  Sparkles, 
+  CheckCircle2, 
+  Check, 
+  TrendingUp, 
+  ShieldCheck, 
+  User, 
+  Mail, 
+  Mic, 
+  MessageSquare, 
+  Flame, 
+  Calendar,
+  Award,
+  Zap,
+  Star,
+  Phone
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useWebsiteData } from '../context/WebsiteContext';
 
 interface ConsultationModalProps {
   isOpen: boolean;
@@ -9,18 +28,68 @@ interface ConsultationModalProps {
 }
 
 export default function ConsultationModal({ isOpen, onClose, selectedPlanName = '' }: ConsultationModalProps) {
+  const { data } = useWebsiteData();
+  const pricingPlans = data.pricingPlans || [];
+
+  const activePlatforms = data.bookingPlatforms || {
+    'YouTube': true,
+    'Spotify': true,
+    'Apple Podcast': true,
+    'Google Podcast': true,
+    'SoundCloud': true,
+    'Not Launched': true
+  };
+
+  const platforms = [
+    { name: 'YouTube' },
+    { name: 'Spotify' },
+    { name: 'Apple Podcast' },
+    { name: 'Google Podcast' },
+    { name: 'SoundCloud' },
+    { name: 'Not Launched' }
+  ].filter(p => activePlatforms[p.name] !== false);
+
+  const defaultPlatformName = platforms[0]?.name || 'Spotify';
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     podcastName: '',
-    platform: 'Spotify',
+    platform: defaultPlatformName,
     monthlyDownloads: '0 - 5,000',
-    selectedPlan: selectedPlanName || 'Standard Package',
+    selectedPlan: '',
     message: '',
+    contactType: 'WhatsApp',
+    contactValue: '',
   });
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Synchronize state when modal opens or selectedPlanName / pricingPlans changes
+  useEffect(() => {
+    if (isOpen) {
+      const standardPlan = pricingPlans[1] || pricingPlans[0];
+      const defaultPlanStr = standardPlan ? `${standardPlan.name} ($${standardPlan.price})` : 'Standard Package ($999)';
+      
+      let initialPlan = defaultPlanStr;
+      if (selectedPlanName) {
+        const matchedPlan = pricingPlans.find(p => p.name.toLowerCase() === selectedPlanName.toLowerCase());
+        if (matchedPlan) {
+          initialPlan = `${matchedPlan.name} ($${matchedPlan.price})`;
+        } else {
+          initialPlan = selectedPlanName;
+        }
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        selectedPlan: initialPlan,
+        platform: defaultPlatformName,
+        monthlyDownloads: '0 - 5,000',
+      }));
+    }
+  }, [isOpen, selectedPlanName, pricingPlans, defaultPlatformName]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,278 +99,530 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
     setTimeout(() => {
       setLoading(false);
       setSubmitted(true);
-    }, 1200);
+    }, 1500);
   };
 
   const handleReset = () => {
+    const standardPlan = pricingPlans[1] || pricingPlans[0];
+    const defaultPlanStr = standardPlan ? `${standardPlan.name} ($${standardPlan.price})` : 'Standard Package ($999)';
+    
     setFormData({
       name: '',
       email: '',
       podcastName: '',
-      platform: 'Spotify',
+      platform: defaultPlatformName,
       monthlyDownloads: '0 - 5,000',
-      selectedPlan: selectedPlanName || 'Standard Package',
+      selectedPlan: selectedPlanName || defaultPlanStr,
       message: '',
+      contactType: 'WhatsApp',
+      contactValue: '',
     });
     setSubmitted(false);
   };
 
   if (!isOpen) return null;
 
+  // Dynamic Monthly Downloads with actual packages' target metrics
+  const downloadRanges = [
+    '0 - 5,000',
+    ...pricingPlans.map(plan => {
+      const downloadFeature = plan.features.find(f => f.toLowerCase().includes('download')) || plan.features[0] || 'Downloads';
+      return downloadFeature;
+    })
+  ];
+
+  // Dynamic packages from the database pricing plans
+  const packages = [
+    ...pricingPlans.map(plan => `${plan.name} ($${plan.price})`),
+    'Custom Consulting'
+  ];
+
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
           id="modal-backdrop"
         />
 
         {/* Modal Content */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={{ opacity: 0, scale: 0.95, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ type: 'spring', duration: 0.5 }}
-          className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-[#0B132B] border border-slate-800 shadow-2xl"
+          exit={{ opacity: 0, scale: 0.95, y: 30 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 180 }}
+          className="relative w-full max-w-4xl overflow-hidden rounded-3xl bg-[#090D1E] border border-slate-800/80 shadow-[0_0_50px_rgba(139,92,246,0.15)] flex flex-col md:grid md:grid-cols-12 max-h-[92vh] md:max-h-none overflow-y-auto"
           id="consultation-modal-card"
         >
-          {/* Header Graphic */}
-          <div className="h-2 bg-gradient-to-r from-brand-purple via-brand-magenta to-brand-cyan" />
+          {/* Top border color line */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-400 z-10" />
 
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all"
+            className="absolute top-4 right-4 z-20 rounded-full p-2 text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all border border-slate-800/50 bg-slate-900/50"
             id="close-modal-btn"
             aria-label="Close modal"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4.5 w-4.5" />
           </button>
 
-          {!submitted ? (
-            <form onSubmit={handleSubmit} className="p-6 md:p-8" id="consultation-form">
-              <div className="mb-6">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-950/80 px-3 py-1 text-xs font-semibold text-purple-300">
-                  <Sparkles className="h-3.5 w-3.5" /> Grow Your Show
-                </span>
-                <h3 className="mt-2 text-2xl font-bold font-display text-white">
-                  Book Your Podcast Strategy Consultation
-                </h3>
-                <p className="text-sm text-slate-300 mt-1">
-                  Fill out this short form, and our growth experts will audit your podcast and design a custom blueprint.
-                </p>
+          {/* LEFT COLUMN: Values, Trust & Social Proof */}
+          {(() => {
+            const booking = data.booking || {
+              badgeText: '100% Free Strategy Audit',
+              title: 'Get Your Custom',
+              titleAccent: 'Podcast Blueprint',
+              description: 'Submit your details and receive a bespoke optimization blueprint analyzed by our team to trigger explosive growth.',
+              benefit1Title: 'Deep SEO Visibility Report',
+              benefit1Desc: 'We analyze your keywords, titles, tags, and description fields.',
+              benefit2Title: 'Top-Charts Formula',
+              benefit2Desc: 'Actionable strategic steps tailored specifically to rank on your targeted platform.',
+              benefit3Title: '30-Min Live Audit Call',
+              benefit3Desc: 'Walk through results with a lead strategist, worth $199 entirely free.',
+              trustTitle: '100% Secure & Confidential',
+              trustDesc: 'Your ideas and analytics are kept private with our team.',
+              ratingText: '4.9/5 RATING',
+              quoteText: 'Their custom audit plan completely changed how we structured our titles. Downloads skyrocketed by 180%!',
+              quoteAuthor: 'Emma G., Tech Talks Daily Host',
+              quoteImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'
+            };
+            return (
+              <div className="md:col-span-5 bg-gradient-to-b from-slate-950/90 to-[#0A0E23] p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800/50 relative overflow-hidden">
+                {/* Background glowing sphere */}
+                <div className="absolute -left-20 -top-20 w-48 h-48 rounded-full bg-violet-600/10 blur-3xl pointer-events-none" />
+                <div className="absolute right-0 bottom-0 w-32 h-32 rounded-full bg-cyan-500/5 blur-2xl pointer-events-none" />
+
+                <div className="relative space-y-6">
+                  {/* Brand Indicator */}
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 px-3 py-1 text-[11px] font-semibold text-violet-300">
+                    <Sparkles className="h-3 w-3 text-violet-400 animate-pulse" /> {booking.badgeText}
+                  </div>
+
+                  {/* Catchy Headline */}
+                  <div>
+                    <h4 className="text-xl md:text-2xl font-black text-white leading-tight font-display tracking-tight">
+                      {booking.title} <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-300">{booking.titleAccent}</span>
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      {booking.description}
+                    </p>
+                  </div>
+
+                  {/* What they get list */}
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500/20 text-violet-400">
+                        <Check className="h-3 w-3" />
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-bold text-slate-100">{booking.benefit1Title}</h5>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{booking.benefit1Desc}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500/20 text-violet-400">
+                        <Check className="h-3 w-3" />
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-bold text-slate-100">{booking.benefit2Title}</h5>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{booking.benefit2Desc}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500/20 text-violet-400">
+                        <Check className="h-3 w-3" />
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-bold text-slate-100">{booking.benefit3Title}</h5>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{booking.benefit3Desc}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Trust Badge */}
+                  <div className="pt-4 border-t border-slate-800/60 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-cyan-950/40 border border-cyan-800/40 flex items-center justify-center text-cyan-400">
+                      <ShieldCheck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] font-bold text-slate-200">{booking.trustTitle}</div>
+                      <div className="text-[10px] text-slate-400">{booking.trustDesc}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Testimonial preview / Authority */}
+                <div className="mt-8 pt-4 border-t border-slate-800/60 relative">
+                  <div className="flex items-center gap-1 text-amber-400 mb-1">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star key={s} className="h-3.5 w-3.5 fill-current text-amber-400" />
+                    ))}
+                    <span className="text-[10px] font-bold text-slate-400 ml-1.5">{booking.ratingText}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 italic leading-relaxed">
+                    "{booking.quoteText}"
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <img 
+                      src={booking.quoteImage} 
+                      alt="Reviewer" 
+                      className="h-6 w-6 rounded-full object-cover border border-slate-700"
+                      referrerPolicy="no-referrer"
+                    />
+                    <span className="text-[10px] font-semibold text-slate-400">{booking.quoteAuthor}</span>
+                  </div>
+                </div>
               </div>
+            );
+          })()}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Your Name */}
+          {/* RIGHT COLUMN: Interactive High-Polished Form */}
+          <div className="md:col-span-7 p-6 md:p-8 flex flex-col justify-center relative bg-slate-950/30">
+            {!submitted ? (
+              <form onSubmit={handleSubmit} className="space-y-4" id="consultation-form">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Your Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full rounded-lg border border-slate-800 bg-[#060b1e] px-3 py-2 text-sm text-white focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple transition-all placeholder:text-slate-600"
-                    placeholder="John Doe"
-                    id="input-name"
-                  />
+                  <h3 className="text-xl md:text-2xl font-black text-white font-display tracking-tight flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-violet-400" /> Book Strategy Session
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Fill out the fields below. Fields marked with <span className="text-violet-400">*</span> are required.
+                  </p>
                 </div>
 
-                {/* Email Address */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full rounded-lg border border-slate-800 bg-[#060b1e] px-3 py-2 text-sm text-white focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple transition-all placeholder:text-slate-600"
-                    placeholder="john@example.com"
-                    id="input-email"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Your Name */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                      <User className="h-3 w-3 text-violet-400" /> Your Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-900/60 px-3.5 py-2.5 text-xs text-white focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-600 font-sans"
+                      placeholder="e.g. John Doe"
+                      id="input-name"
+                    />
+                  </div>
+
+                  {/* Email Address */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between w-full">
+                      <span className="flex items-center gap-1">
+                        <Mail className="h-3 w-3 text-violet-400" /> Email Address *
+                      </span>
+                      <span className="text-[9px] text-emerald-400 tracking-normal capitalize font-medium">Recommended</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-900/60 px-3.5 py-2.5 text-xs text-white focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-600 font-sans"
+                      placeholder="e.g. john@example.com (Recommended)"
+                      id="input-email"
+                    />
+                  </div>
+
+                  {/* Podcast Name */}
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                      <Mic className="h-3 w-3 text-violet-400" /> Podcast Name (If launched)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.podcastName}
+                      onChange={(e) => setFormData({ ...formData, podcastName: e.target.value })}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-900/60 px-3.5 py-2.5 text-xs text-white focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-600 font-sans"
+                      placeholder="e.g. The Creative Spark Show"
+                      id="input-podcast-name"
+                    />
+                  </div>
+
+                  {/* WhatsApp / Social Account Info (Alternative options requested by user) */}
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between w-full">
+                      <span className="flex items-center gap-1">
+                        <Phone className="h-3 w-3 text-violet-400" /> WhatsApp / Social Info *
+                      </span>
+                      <span className="text-[9px] text-emerald-400 tracking-normal capitalize font-medium">WhatsApp Recommended</span>
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2.5">
+                      <select
+                        value={formData.contactType}
+                        onChange={(e) => setFormData({ ...formData, contactType: e.target.value })}
+                        className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-2.5 text-xs text-slate-200 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all font-sans cursor-pointer shrink-0"
+                      >
+                        <option value="WhatsApp">WhatsApp (Recommended)</option>
+                        <option value="Telegram">Telegram</option>
+                        <option value="Skype">Skype</option>
+                        <option value="Facebook">Facebook Profile</option>
+                        <option value="Instagram">Instagram Profile</option>
+                        <option value="LinkedIn">LinkedIn Profile</option>
+                        <option value="Linktree">Linktree URL</option>
+                        <option value="Spotify">Spotify Link</option>
+                        <option value="Twitter">Twitter / X Profile</option>
+                      </select>
+                      <input
+                        type="text"
+                        required
+                        value={formData.contactValue}
+                        onChange={(e) => setFormData({ ...formData, contactValue: e.target.value })}
+                        className="flex-1 rounded-xl border border-slate-800 bg-slate-900/60 px-3.5 py-2.5 text-xs text-white focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-600 font-sans"
+                        placeholder={
+                          formData.contactType === 'WhatsApp' ? 'e.g. +880 1700-000000 (Recommended)' :
+                          formData.contactType === 'Telegram' ? 'e.g. @username' :
+                          formData.contactType === 'Skype' ? 'e.g. live:username' :
+                          formData.contactType === 'Facebook' ? 'e.g. facebook.com/username' :
+                          formData.contactType === 'Instagram' ? 'e.g. instagram.com/username' :
+                          formData.contactType === 'LinkedIn' ? 'e.g. linkedin.com/in/username' :
+                          formData.contactType === 'Linktree' ? 'e.g. linktr.ee/username' :
+                          formData.contactType === 'Spotify' ? 'e.g. open.spotify.com/...' :
+                          formData.contactType === 'Twitter' ? 'e.g. x.com/username' :
+                          'Enter profile link or account ID...'
+                        }
+                        id="input-contact-value"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Podcast Name */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Podcast Name (If launched)
+                {/* VISUAL CHOICE: Target Platform */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                    Target Platform
                   </label>
-                  <input
-                    type="text"
-                    value={formData.podcastName}
-                    onChange={(e) => setFormData({ ...formData, podcastName: e.target.value })}
-                    className="w-full rounded-lg border border-slate-800 bg-[#060b1e] px-3 py-2 text-sm text-white focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple transition-all placeholder:text-slate-600"
-                    placeholder="The Creative Spark"
-                    id="input-podcast-name"
-                  />
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                    {platforms.map((plat) => (
+                      <button
+                        type="button"
+                        key={plat.name}
+                        onClick={() => setFormData({ ...formData, platform: plat.name })}
+                        className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 px-3 text-xs font-semibold transition-all duration-200 select-none ${
+                          formData.platform === plat.name
+                            ? 'border-violet-500 bg-violet-500/10 text-white shadow-lg shadow-violet-500/5'
+                            : 'border-slate-800/80 bg-slate-900/40 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                        }`}
+                      >
+                        <span>{plat.name}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Target Platform */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Primary Platform
-                  </label>
-                  <select
-                    value={formData.platform}
-                    onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
-                    className="w-full rounded-lg border border-slate-800 bg-[#060b1e] px-3 py-2 text-sm text-white focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple transition-all"
-                    id="input-platform"
-                  >
-                    <option className="bg-[#0B132B]">Spotify</option>
-                    <option className="bg-[#0B132B]">YouTube</option>
-                    <option className="bg-[#0B132B]">Apple Podcasts</option>
-                    <option className="bg-[#0B132B]">SoundCloud</option>
-                    <option className="bg-[#0B132B]">Google Podcasts</option>
-                    <option className="bg-[#0B132B]">Not Launched Yet</option>
-                  </select>
-                </div>
-
-                {/* Monthly Downloads */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                {/* CURRENT MONTHLY DOWNLOADS */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
                     Current Monthly Downloads
                   </label>
-                  <select
-                    value={formData.monthlyDownloads}
-                    onChange={(e) => setFormData({ ...formData, monthlyDownloads: e.target.value })}
-                    className="w-full rounded-lg border border-slate-800 bg-[#060b1e] px-3 py-2 text-sm text-white focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple transition-all"
-                    id="input-downloads"
-                  >
-                    <option className="bg-[#0B132B]">0 - 5,000</option>
-                    <option className="bg-[#0B132B]">5,000 - 20,000</option>
-                    <option className="bg-[#0B132B]">20,000 - 100,000</option>
-                    <option className="bg-[#0B132B]">100,000+</option>
-                  </select>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {downloadRanges.map((range) => (
+                      <button
+                        type="button"
+                        key={range}
+                        onClick={() => {
+                          const idx = downloadRanges.indexOf(range);
+                          let matchedPkg = formData.selectedPlan;
+                          if (idx > 0) {
+                            const plan = pricingPlans[idx - 1];
+                            if (plan) {
+                              matchedPkg = `${plan.name} ($${plan.price})`;
+                            }
+                          } else {
+                            matchedPkg = 'Custom Consulting';
+                          }
+                          setFormData({
+                            ...formData,
+                            monthlyDownloads: range,
+                            selectedPlan: matchedPkg
+                          });
+                        }}
+                        className={`text-center rounded-xl border py-2 px-1 text-[10px] sm:text-xs font-semibold transition-all duration-200 select-none ${
+                          formData.monthlyDownloads === range
+                            ? 'border-violet-500 bg-violet-500/10 text-white shadow-lg shadow-violet-500/5'
+                            : 'border-slate-800/80 bg-slate-900/40 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                        }`}
+                      >
+                        {range}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Growth Plan Interest */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Target Package interest
+                {/* TARGET PACKAGE INTEREST */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                    Package of Interest
                   </label>
-                  <select
-                    value={formData.selectedPlan}
-                    onChange={(e) => setFormData({ ...formData, selectedPlan: e.target.value })}
-                    className="w-full rounded-lg border border-slate-800 bg-[#060b1e] px-3 py-2 text-sm text-white focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple transition-all"
-                    id="input-plan"
-                  >
-                    <option className="bg-[#0B132B]">Starter Package ($499)</option>
-                    <option className="bg-[#0B132B]">Standard Package ($999)</option>
-                    <option className="bg-[#0B132B]">Premium Package ($1899)</option>
-                    <option className="bg-[#0B132B]">Custom Enterprise Consulting</option>
-                  </select>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {packages.map((pkg) => {
+                      const isSelected = formData.selectedPlan.toLowerCase() === pkg.toLowerCase() || 
+                                         formData.selectedPlan.toLowerCase().includes(pkg.toLowerCase()) || 
+                                         pkg.toLowerCase().includes(formData.selectedPlan.toLowerCase());
+                      return (
+                        <button
+                          type="button"
+                          key={pkg}
+                          onClick={() => {
+                            const idx = packages.indexOf(pkg);
+                            let matchedDownloads = formData.monthlyDownloads;
+                            if (idx < pricingPlans.length) {
+                              const plan = pricingPlans[idx];
+                              matchedDownloads = plan.features.find(f => f.toLowerCase().includes('download')) || plan.features[0] || 'Downloads';
+                            } else {
+                              matchedDownloads = '0 - 5,000';
+                            }
+                            setFormData({
+                              ...formData,
+                              selectedPlan: pkg,
+                              monthlyDownloads: matchedDownloads
+                            });
+                          }}
+                          className={`text-center rounded-xl border py-2 px-1 text-[10px] font-semibold transition-all duration-200 select-none leading-tight ${
+                            isSelected
+                              ? 'border-cyan-500 bg-cyan-500/10 text-white shadow-lg shadow-cyan-500/5'
+                              : 'border-slate-800/80 bg-slate-900/40 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                          }`}
+                        >
+                          {pkg}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              {/* Message / Goals */}
-              <div className="mt-4">
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  What are your main podcast goals?
-                </label>
-                <textarea
-                  rows={3}
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full rounded-lg border border-slate-800 bg-[#060b1e] px-3 py-2 text-sm text-white focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple transition-all placeholder:text-slate-600"
-                  placeholder="Tell us about your audience, current challenges, and goals..."
-                  id="input-message"
-                />
-              </div>
+                {/* What are your main podcast goals? */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                    <MessageSquare className="h-3 w-3 text-violet-400" /> What are your main goals / challenges?
+                  </label>
+                  <textarea
+                    rows={2.5}
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="w-full rounded-xl border border-slate-800 bg-slate-900/60 px-3.5 py-2.5 text-xs text-white focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-600 font-sans"
+                    placeholder="e.g. Boost listeners on Apple, rank high for 'marketing' keyword, etc."
+                    id="input-message"
+                  />
+                </div>
 
-              {/* Form Actions */}
-              <div className="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="rounded-full px-5 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-all"
-                  id="btn-cancel"
+                {/* Form Actions / Submit Button */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
+                  <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
+                    <Award className="h-3.5 w-3.5 text-cyan-400" /> Fast Response Guaranteed
+                  </div>
+
+                  <div className="flex gap-2.5 w-full sm:w-auto justify-end">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 transition-all"
+                      id="btn-cancel"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white px-5 py-2.5 text-xs font-bold transition-all shadow-[0_4px_20px_rgba(139,92,246,0.35)] active:scale-98 disabled:opacity-70 select-none cursor-pointer"
+                      id="btn-submit"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          Analyzing details...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-3.5 w-3.5" />
+                          Claim My Free Strategy Plan
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            ) : (
+              <div className="py-12 px-4 text-center" id="success-screen">
+                <motion.div
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', damping: 15 }}
+                  className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-cyan hover:bg-[#00e2c4] text-slate-950 px-6 py-2.5 text-sm font-semibold transition-all shadow-md active:scale-98 disabled:opacity-70"
-                  id="btn-submit"
-                >
-                  {loading ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-950 border-t-transparent" />
-                      Analyzing Podcast...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      Get My Strategy Plan
-                    </>
+                  <CheckCircle2 className="h-9 w-9" />
+                </motion.div>
+
+                <h3 className="mt-5 text-2xl font-black font-display text-white tracking-tight">
+                  Strategy Session Reserved!
+                </h3>
+                <p className="mt-2 text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                  Excellent choice, <strong className="text-cyan-300">{formData.name}</strong>! We have received your podcast insights for{' '}
+                  <strong className="text-violet-400">{formData.podcastName || 'your upcoming channel'}</strong>.
+                </p>
+
+                {/* Animated receipt details card */}
+                <div className="mt-6 bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 text-left text-xs space-y-2.5 max-w-sm mx-auto shadow-inner">
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-800/40">
+                    <span className="font-semibold text-slate-400">Target Channel</span>
+                    <span className="text-slate-200 font-bold">{formData.platform}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-800/40">
+                    <span className="font-semibold text-slate-400">Current Downloads</span>
+                    <span className="text-slate-200 font-bold">{formData.monthlyDownloads}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-slate-400">Selected Interest</span>
+                    <span className="text-cyan-300 font-bold">{formData.selectedPlan}</span>
+                  </div>
+                  {formData.contactValue && (
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-800/40">
+                      <span className="font-semibold text-slate-400">{formData.contactType} Account</span>
+                      <span className="text-violet-400 font-bold break-all">{formData.contactValue}</span>
+                    </div>
                   )}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="p-8 text-center" id="success-screen">
-              <motion.div
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-900/50"
-              >
-                <CheckCircle2 className="h-10 w-10" />
-              </motion.div>
-              <h3 className="mt-4 text-2xl font-bold font-display text-white">
-                Application Submitted Successfully!
-              </h3>
-              <p className="mt-2 text-sm text-slate-300 max-w-md mx-auto">
-                Thank you, <strong className="text-brand-cyan">{formData.name}</strong>! We have received details for{' '}
-                <strong className="text-brand-cyan">{formData.podcastName || 'your upcoming podcast'}</strong>.
-              </p>
-              <div className="mt-6 bg-[#060b1e] border border-slate-800 rounded-xl p-4 text-left text-xs text-slate-200 space-y-2 max-w-md mx-auto">
-                <div className="flex justify-between">
-                  <span className="font-semibold text-slate-400">Platform:</span>
-                  <span>{formData.platform}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-slate-400">Monthly Downloads:</span>
-                  <span>{formData.monthlyDownloads}</span>
+
+                <div className="mt-6 flex items-center justify-center gap-2 p-3 bg-violet-950/25 border border-violet-900/30 rounded-xl max-w-sm mx-auto">
+                  <Zap className="h-4 w-4 text-violet-400 animate-bounce" />
+                  <p className="text-[11px] text-violet-300 font-semibold leading-normal text-left">
+                    Our operations team (led by Azad Khan) will contact you at <strong className="text-white">{formData.email}</strong>{formData.contactValue ? <> or your <strong className="text-cyan-300">{formData.contactType}</strong></> : ''} in 2-4 hours.
+                  </p>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-slate-400">Plan Selected:</span>
-                  <span>{formData.selectedPlan}</span>
+
+                <div className="mt-8 flex justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="rounded-xl px-4 py-2 text-xs font-semibold border border-slate-800 text-slate-300 hover:bg-slate-800/60 transition-all bg-slate-900/30"
+                    id="btn-submit-another"
+                  >
+                    Submit Another
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 px-6 py-2 text-xs font-bold transition-all shadow-[0_4px_15px_rgba(6,182,212,0.3)]"
+                    id="btn-close"
+                  >
+                    Done
+                  </button>
                 </div>
               </div>
-              <p className="mt-4 text-xs text-purple-300 font-medium">
-                Our operations team (led by Azad Khan) will email you at {formData.email} in 2-4 hours.
-              </p>
-              <div className="mt-6 flex justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="rounded-full px-5 py-2 text-xs font-semibold border border-slate-800 text-slate-300 hover:bg-slate-800 bg-transparent transition-all"
-                  id="btn-submit-another"
-                >
-                  Submit Another
-                </button>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="rounded-full bg-brand-cyan text-slate-950 hover:bg-[#00e2c4] px-5 py-2 text-xs font-semibold transition-all"
-                  id="btn-close"
-                >
-                  Done
-                </button>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </motion.div>
       </div>
     </AnimatePresence>
   );
 }
+

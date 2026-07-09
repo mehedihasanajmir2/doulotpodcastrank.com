@@ -54,6 +54,27 @@ export interface WebsiteData {
   processSteps: ProcessStep[];
   testimonials: Testimonial[];
   testimonialsImage: string;
+  bookingPlatforms?: {
+    [key: string]: boolean;
+  };
+  booking?: {
+    badgeText: string;
+    title: string;
+    titleAccent: string;
+    description: string;
+    benefit1Title: string;
+    benefit1Desc: string;
+    benefit2Title: string;
+    benefit2Desc: string;
+    benefit3Title: string;
+    benefit3Desc: string;
+    trustTitle: string;
+    trustDesc: string;
+    ratingText: string;
+    quoteText: string;
+    quoteAuthor: string;
+    quoteImage: string;
+  };
   contactInfo: {
     email: string;
     phone: string;
@@ -139,6 +160,32 @@ const DEFAULT_WEBSITE_DATA: WebsiteData = {
   processSteps: PROCESS_STEPS,
   testimonials: TESTIMONIALS,
   testimonialsImage: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=600',
+  bookingPlatforms: {
+    'YouTube': true,
+    'Spotify': true,
+    'Apple Podcast': true,
+    'Google Podcast': true,
+    'SoundCloud': true,
+    'Not Launched': true
+  },
+  booking: {
+    badgeText: '100% Free Strategy Audit',
+    title: 'Get Your Custom',
+    titleAccent: 'Podcast Blueprint',
+    description: 'Submit your details and receive a bespoke optimization blueprint analyzed by our team to trigger explosive growth.',
+    benefit1Title: 'Deep SEO Visibility Report',
+    benefit1Desc: 'We analyze your keywords, titles, tags, and description fields.',
+    benefit2Title: 'Top-Charts Formula',
+    benefit2Desc: 'Actionable strategic steps tailored specifically to rank on your targeted platform.',
+    benefit3Title: '30-Min Live Audit Call',
+    benefit3Desc: 'Walk through results with a lead strategist, worth $199 entirely free.',
+    trustTitle: '100% Secure & Confidential',
+    trustDesc: 'Your ideas and analytics are kept private with our team.',
+    ratingText: '4.9/5 RATING',
+    quoteText: 'Their custom audit plan completely changed how we structured our titles. Downloads skyrocketed by 180%!',
+    quoteAuthor: 'Emma G., Tech Talks Daily Host',
+    quoteImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'
+  },
   contactInfo: {
     email: 'doulotaligettopgrowth@gmail.com',
     phone: '+880 1765-068860',

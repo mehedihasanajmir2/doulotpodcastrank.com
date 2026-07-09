@@ -70,7 +70,7 @@ export default function TeamSection({ onOpenConsultation }: TeamSectionProps) {
 
             return (
               <motion.div
-                key={member.name}
+                key={`${member.name}-${index}`}
                 initial={initial}
                 whileInView={{ x: 0, opacity: 1 }}
                 viewport={{ once: true, margin: "-50px" }}
