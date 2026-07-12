@@ -16,10 +16,15 @@ import {
   Award,
   Zap,
   Star,
-  Phone
+  Phone,
+  Copy,
+  MessageCircle,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useWebsiteData } from '../context/WebsiteContext';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface ConsultationModalProps {
   isOpen: boolean;
@@ -65,6 +70,8 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [generatedToken, setGeneratedToken] = useState('');
+  const [copiedToken, setCopiedToken] = useState(false);
 
   // Synchronize state when modal opens or selectedPlanName / pricingPlans changes
   useEffect(() => {
@@ -91,15 +98,38 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
     }
   }, [isOpen, selectedPlanName, pricingPlans, defaultPlatformName]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    // Generate an beautiful dynamic order/booking token
+    const tokenPart = Math.floor(100000 + Math.random() * 900000);
+    const tokenVal = `DPR-${tokenPart}`;
+    setGeneratedToken(tokenVal);
+    setCopiedToken(false);
+
+    try {
+      // Save directly to Firestore for the admin to review
+      const docRef = doc(db, 'bookings', tokenVal);
+      await setDoc(docRef, {
+        token: tokenVal,
+        name: formData.name,
+        email: formData.email,
+        podcastName: formData.podcastName || 'Not Provided',
+        platform: formData.platform,
+        monthlyDownloads: formData.monthlyDownloads,
+        selectedPlan: formData.selectedPlan,
+        message: formData.message || '',
+        contactType: formData.contactType,
+        contactValue: formData.contactValue,
+        createdAt: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error('Error saving booking to Firestore:', err);
+    } finally {
       setLoading(false);
       setSubmitted(true);
-    }, 1500);
+    }
   };
 
   const handleReset = () => {
@@ -117,6 +147,8 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
       contactType: 'WhatsApp',
       contactValue: '',
     });
+    setGeneratedToken('');
+    setCopiedToken(false);
     setSubmitted(false);
   };
 
@@ -552,7 +584,7 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
                 </div>
               </form>
             ) : (
-              <div className="py-12 px-4 text-center" id="success-screen">
+              <div className="py-8 px-4 text-center" id="success-screen">
                 <motion.div
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -563,12 +595,94 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
                 </motion.div>
 
                 <h3 className="mt-5 text-2xl font-black font-display text-white tracking-tight">
-                  Strategy Session Reserved!
+                  Strategy Session Confirmed!
                 </h3>
                 <p className="mt-2 text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
                   Excellent choice, <strong className="text-cyan-300">{formData.name}</strong>! We have received your podcast insights for{' '}
                   <strong className="text-violet-400">{formData.podcastName || 'your upcoming channel'}</strong>.
                 </p>
+
+                {/* Token Section */}
+                <div className="mt-6 max-w-md mx-auto bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500" />
+                  
+                  <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 block mb-1">
+                    Your Unique Booking Token
+                  </span>
+                  
+                  <div className="flex items-center justify-center gap-2 bg-slate-950/60 rounded-xl px-4 py-3 border border-slate-800/80">
+                    <span className="font-mono text-lg font-extrabold text-cyan-300 tracking-wider">
+                      {generatedToken}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedToken);
+                        setCopiedToken(true);
+                        setTimeout(() => setCopiedToken(false), 2000);
+                      }}
+                      className="ml-2 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 transition-all active:scale-95 border border-slate-700"
+                      title="Copy Token to Clipboard"
+                    >
+                      {copiedToken ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                          <span className="text-emerald-400 font-bold">Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  
+                  <p className="mt-2.5 text-[11px] text-slate-400 leading-normal">
+                    Please use this token when contacting us. This helps us recognize your order on our website instantly and serve you faster!
+                  </p>
+                </div>
+
+                {/* Contact Actions Section */}
+                <div className="mt-6 max-w-md mx-auto space-y-3">
+                  <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 block text-center">
+                    Talk Directly With Us (Lead Strategist)
+                  </span>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* WhatsApp Action */}
+                    <a
+                      href={`https://wa.me/${(data.contactInfo.phone || '+880 1765-068860').replace(/[^0-9]/g, '')}?text=Hi%20there%2C%20I%20just%20ordered%20a%20Podcast%20Strategy%20Session.%20My%20Booking%20Token%20is%20${generatedToken}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 shadow-[0_4px_15px_rgba(16,185,129,0.3)] transition-all active:scale-98"
+                    >
+                      <MessageCircle className="h-4 w-4 shrink-0" />
+                      Chat on WhatsApp
+                    </a>
+
+                    {/* Email Action */}
+                    <a
+                      href={`mailto:${data.contactInfo.email || 'doulotaligettopgrowth@gmail.com'}?subject=Strategy%20Session%20Booking%20Token%20${generatedToken}&body=Hello%20Doulot%20Podcast%20Rank%20Team%2C%0A%0AMy%20booking%20token%20is%20${generatedToken}.%20Please%20let%20me%20know%20how%20we%20can%20proceed%20with%20our%20Podcast%20Strategy%20Session.%0A%0AThank%20you.`}
+                      className="flex items-center justify-center gap-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-xs py-3 px-4 transition-all active:scale-98"
+                    >
+                      <Mail className="h-4 w-4 shrink-0" />
+                      Send an Email
+                    </a>
+                  </div>
+
+                  {/* Manual details display */}
+                  <div className="bg-slate-900/40 border border-slate-800/40 rounded-xl p-3 text-[11px] text-slate-400 space-y-1 text-left">
+                    <div className="flex justify-between items-center">
+                      <span>WhatsApp Number:</span>
+                      <strong className="text-slate-200">{data.contactInfo.phone || '+880 1765-068860'}</strong>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Email Address:</span>
+                      <strong className="text-slate-200">{data.contactInfo.email || 'doulotaligettopgrowth@gmail.com'}</strong>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Animated receipt details card */}
                 <div className="mt-6 bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 text-left text-xs space-y-2.5 max-w-sm mx-auto shadow-inner">
@@ -592,18 +706,11 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
                   )}
                 </div>
 
-                <div className="mt-6 flex items-center justify-center gap-2 p-3 bg-violet-950/25 border border-violet-900/30 rounded-xl max-w-sm mx-auto">
-                  <Zap className="h-4 w-4 text-violet-400 animate-bounce" />
-                  <p className="text-[11px] text-violet-300 font-semibold leading-normal text-left">
-                    Our operations team (led by Azad Khan) will contact you at <strong className="text-white">{formData.email}</strong>{formData.contactValue ? <> or your <strong className="text-cyan-300">{formData.contactType}</strong></> : ''} in 2-4 hours.
-                  </p>
-                </div>
-
                 <div className="mt-8 flex justify-center gap-3">
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="rounded-xl px-4 py-2 text-xs font-semibold border border-slate-800 text-slate-300 hover:bg-slate-800/60 transition-all bg-slate-900/30"
+                    className="rounded-xl px-4 py-2.5 text-xs font-semibold border border-slate-800 text-slate-300 hover:bg-slate-800/60 transition-all bg-slate-900/30"
                     id="btn-submit-another"
                   >
                     Submit Another
@@ -611,7 +718,7 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
                   <button
                     type="button"
                     onClick={onClose}
-                    className="rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 px-6 py-2 text-xs font-bold transition-all shadow-[0_4px_15px_rgba(6,182,212,0.3)]"
+                    className="rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 px-6 py-2.5 text-xs font-bold transition-all shadow-[0_4px_15px_rgba(6,182,212,0.3)]"
                     id="btn-close"
                   >
                     Done

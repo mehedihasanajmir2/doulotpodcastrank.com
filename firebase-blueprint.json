@@ -50,12 +50,35 @@
           "description": "General contact information details"
         }
       }
+    },
+    "booking": {
+      "title": "Booking",
+      "description": "Saved strategy session registrations and orders by clients",
+      "type": "object",
+      "properties": {
+        "token": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "podcastName": { "type": "string" },
+        "platform": { "type": "string" },
+        "monthlyDownloads": { "type": "string" },
+        "selectedPlan": { "type": "string" },
+        "message": { "type": "string" },
+        "contactType": { "type": "string" },
+        "contactValue": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["token", "name", "email"]
     }
   },
   "firestore": {
     "configs/website_data": {
       "schema": "website_data",
       "description": "The dynamic configurations document of the website."
+    },
+    "bookings/{bookingId}": {
+      "schema": "booking",
+      "description": "Registrations and strategy sessions submitted by clients."
     }
   }
 }

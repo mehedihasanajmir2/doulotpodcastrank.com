@@ -4,6 +4,9 @@ service cloud.firestore {
     match /configs/website_data {
       allow read, write: if true;
     }
+    match /bookings/{bookingId} {
+      allow read, write: if true;
+    }
     match /{document=**} {
       allow read, write: if false;
     }

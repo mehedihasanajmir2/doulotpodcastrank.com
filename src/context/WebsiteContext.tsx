@@ -87,23 +87,8 @@ export interface WebsiteData {
 }
 
 const migrateWebsiteData = (obj: any): any => {
-  if (typeof obj === 'string') {
-    return obj
-      .replace(/Doulot Ali Podcast Ranking Media/g, 'Doulot Podcast Rank')
-      .replace(/PodcastTopRankMedia/g, 'Doulot Podcast Rank')
-      .replace(/Doulot Ali Gettop Growth/g, 'Doulot Podcast Rank')
-      .replace(/Doulot Ali/g, 'Doulot')
-      .replace(/Podcast Ranking Media/g, 'Podcast Rank')
-      .replace(/Gettop Growth/g, 'Podcast Rank');
-  } else if (Array.isArray(obj)) {
-    return obj.map(migrateWebsiteData);
-  } else if (obj !== null && typeof obj === 'object') {
-    const res: any = {};
-    for (const key of Object.keys(obj)) {
-      res[key] = migrateWebsiteData(obj[key]);
-    }
-    return res;
-  }
+  // Return the object exactly as stored in the database without any automatic text replacements,
+  // so client/admin edits are permanently saved and never altered.
   return obj;
 };
 

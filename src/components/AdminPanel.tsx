@@ -19,10 +19,15 @@ import {
   FileText,
   Calendar,
   Lock,
-  Unlock
+  Unlock,
+  Mail,
+  MessageCircle,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ImageUploader from './ImageUploader';
+import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export default function AdminPanel() {
   const {
@@ -34,7 +39,7 @@ export default function AdminPanel() {
     logout
   } = useWebsiteData();
 
-  const [activeTab, setActiveTab] = useState<'hero' | 'about' | 'episodes' | 'pricing' | 'testimonials' | 'team' | 'booking' | 'footer'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'about' | 'episodes' | 'pricing' | 'testimonials' | 'team' | 'booking' | 'footer' | 'bookings'>('hero');
   const [successMsg, setSuccessMsg] = useState('');
 
   const defaultBooking = {
@@ -86,6 +91,49 @@ export default function AdminPanel() {
   const [promptForFieldId, setPromptForFieldId] = useState<{ id: string; label: string } | null>(null);
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  // Bookings state and logic
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+
+  // Clear unlocked fields whenever the admin panel open/close state toggles to enforce automatic relocking
+  useEffect(() => {
+    setUnlockedFields({});
+  }, [isAdminPanelOpen]);
+
+  const fetchBookings = async () => {
+    setBookingsLoading(true);
+    try {
+      const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const list: any[] = [];
+      querySnapshot.forEach((docSnap) => {
+        list.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      setBookings(list);
+    } catch (err) {
+      console.error('Error fetching bookings:', err);
+    } finally {
+      setBookingsLoading(false);
+    }
+  };
+
+  const handleDeleteBooking = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this booking? This action is permanent.')) {
+      try {
+        await deleteDoc(doc(db, 'bookings', id));
+        setBookings(prev => prev.filter(b => b.id !== id));
+      } catch (err) {
+        console.error('Error deleting booking:', err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isAdminPanelOpen) {
+      fetchBookings();
+    }
+  }, [isAdminPanelOpen, activeTab]);
 
   const handleToggleLock = (fieldId: string, label: string) => {
     if (unlockedFields[fieldId]) {
@@ -299,6 +347,7 @@ export default function AdminPanel() {
             { id: 'team', name: 'Your Podcast Growth Team', icon: Users },
             { id: 'booking', name: 'Book Strategy Session', icon: Calendar },
             { id: 'footer', name: 'Footer & Contacts', icon: FileText },
+            { id: 'bookings', name: 'Client Bookings', icon: ListPlus },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1237,6 +1286,166 @@ export default function AdminPanel() {
                       />
                     </LockedField>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Client Bookings list Tab */}
+            {activeTab === 'bookings' && (
+              <div className="space-y-6" id="admin-bookings-tab">
+                <div className="border border-slate-800 rounded-2xl bg-slate-900/30 p-6 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div>
+                      <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+                        <span className="text-xl">📋</span> <span>Client Booking Requests</span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Review direct consultations, podcast details, selected plans, and contact tokens.
+                      </p>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={fetchBookings}
+                      disabled={bookingsLoading}
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      {bookingsLoading ? 'Refreshing...' : '🔄 Refresh List'}
+                    </button>
+                  </div>
+
+                  {bookingsLoading ? (
+                    <div className="py-20 text-center space-y-3">
+                      <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
+                      <p className="text-xs text-slate-400">Loading strategy bookings from Firestore...</p>
+                    </div>
+                  ) : bookings.length === 0 ? (
+                    <div className="py-16 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/10">
+                      <span className="text-4xl block mb-2">🎈</span>
+                      <h4 className="text-sm font-bold text-slate-300">No Booking Submissions Yet</h4>
+                      <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                        When clients book strategy session audit on your website, their detailed requirements and contact tokens will show up here.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {bookings.map((booking, index) => {
+                        const dateFormatted = booking.createdAt 
+                          ? new Date(booking.createdAt).toLocaleString() 
+                          : 'Unknown Date';
+                          
+                        return (
+                          <div 
+                            key={booking.id || index}
+                            className="border border-slate-800 bg-slate-900/60 rounded-2xl p-5 hover:border-slate-700 transition-all space-y-4 relative overflow-hidden"
+                          >
+                            {/* Decorative line */}
+                            <div className="absolute top-0 bottom-0 left-0 w-[4px] bg-gradient-to-b from-violet-600 to-indigo-600" />
+                            
+                            {/* Top info row */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/60 pb-3">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2.5">
+                                  <span className="text-xs font-mono font-extrabold text-cyan-400 bg-cyan-950/40 border border-cyan-800/30 px-2.5 py-1 rounded-lg">
+                                    {booking.token || booking.id || 'N/A'}
+                                  </span>
+                                  <h4 className="text-sm font-black text-white">{booking.name}</h4>
+                                </div>
+                                <p className="text-[11px] text-slate-400">
+                                  Submitted: <span className="text-slate-300 font-medium">{dateFormatted}</span>
+                                </p>
+                              </div>
+
+                              {/* Action buttons */}
+                              <div className="flex items-center gap-2">
+                                {/* Delete action */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteBooking(booking.id)}
+                                  className="inline-flex items-center justify-center p-2 rounded-xl bg-rose-950/30 border border-rose-900/30 text-rose-400 hover:bg-rose-900/30 transition-all"
+                                  title="Delete Booking record"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Grid details block */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                              <div className="space-y-1">
+                                <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Email Address</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-slate-200 font-semibold truncate block">{booking.email}</span>
+                                  <a 
+                                    href={`mailto:${booking.email}`}
+                                    className="text-violet-400 hover:text-violet-300 shrink-0"
+                                    title="Send client an email"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                </div>
+                              </div>
+
+                              <div className="space-y-1">
+                                <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Preferred Contact</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-slate-300 font-bold">{booking.contactType || 'WhatsApp'}</span>
+                                  {booking.contactValue && (
+                                    <>
+                                      <span className="text-slate-400 font-medium font-mono truncate max-w-[120px]">({booking.contactValue})</span>
+                                      {booking.contactType === 'WhatsApp' ? (
+                                        <a 
+                                          href={`https://wa.me/${booking.contactValue.replace(/[^0-9]/g, '')}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-emerald-400 hover:text-emerald-300 shrink-0"
+                                          title="Open WhatsApp chat"
+                                        >
+                                          <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                      ) : (
+                                        <span className="text-slate-500 shrink-0">💬</span>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="space-y-1">
+                                <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Selected Interest / Plan</span>
+                                <span className="text-cyan-400 font-bold block truncate">{booking.selectedPlan || 'Free Audit'}</span>
+                              </div>
+
+                              <div className="space-y-1">
+                                <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Podcast Platform</span>
+                                <span className="text-slate-300 font-medium block">{booking.platform || 'Not Launched'}</span>
+                              </div>
+
+                              <div className="space-y-1">
+                                <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Current Monthly Downloads</span>
+                                <span className="text-indigo-400 font-semibold block">{booking.monthlyDownloads || '0'}</span>
+                              </div>
+
+                              <div className="space-y-1">
+                                <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Podcast Name / ID</span>
+                                <span className="text-violet-400 font-bold block truncate">{booking.podcastName || 'None'}</span>
+                              </div>
+                            </div>
+
+                            {/* Message / Requirement detail */}
+                            {booking.message && (
+                              <div className="bg-slate-950/40 border border-slate-800/50 rounded-xl p-3 text-xs">
+                                <span className="text-[9px] text-slate-500 uppercase tracking-wider font-black block mb-1">
+                                  Client Message / Goals:
+                                </span>
+                                <p className="text-slate-300 leading-relaxed font-sans">{booking.message}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
