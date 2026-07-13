@@ -20,9 +20,9 @@ export default function Logo({ className = '', iconOnly = false, size = 'md' }: 
   }[size];
 
   const textSize = {
-    sm: 'text-sm sm:text-base',
-    md: 'text-lg sm:text-xl',
-    lg: 'text-3xl sm:text-4xl'
+    sm: 'text-base sm:text-lg',
+    md: 'text-xl sm:text-2xl md:text-3xl',
+    lg: 'text-4xl sm:text-5xl'
   }[size];
 
   const separatorHeight = {
@@ -69,11 +69,11 @@ export default function Logo({ className = '', iconOnly = false, size = 'md' }: 
           <div className={`${separatorHeight} w-[2px] bg-gradient-to-b from-violet-500 via-indigo-500 to-transparent opacity-80 rounded-full`} />
 
           {/* Doulot Ali / Gettop Growth layout */}
-          <div className="flex flex-col justify-center text-left gap-0.5 sm:gap-1">
-            <span className={`font-sans font-bold tracking-tight text-white ${textSize}`}>
+          <div className="flex flex-col justify-center text-left gap-0 sm:gap-0.5">
+            <span className={`font-sans font-extrabold tracking-tight text-slate-900 ${textSize}`}>
               {data.logo.textTop}
             </span>
-            <span className={`font-sans font-medium tracking-tight text-violet-400 ${textSize}`}>
+            <span className={`font-sans font-bold tracking-tight text-sky-700 ${textSize}`}>
               {data.logo.textBottom}
             </span>
           </div>
