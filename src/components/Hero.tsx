@@ -20,7 +20,7 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
   return (
     <section
       id="home"
-      className="relative min-h-screen pt-28 pb-16 overflow-hidden bg-gradient-to-b from-[#060b1e] via-[#091130] to-[#060b1e] flex items-center"
+      className="relative min-h-screen pt-28 pb-16 overflow-hidden bg-gradient-to-b from-sky-200 via-sky-100 to-white flex items-center"
     >
       {/* Dashed Grid Background Element */}
       <div className="absolute inset-0 purple-grid-pattern opacity-60 pointer-events-none" />
@@ -39,9 +39,9 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
           >
             {/* Top Gradient Divider Line */}
             <motion.div
-              initial={{ opacity: 0, x: -40 }}
+              initial={{ opacity: 0, x: "-100vw" }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+              transition={{ type: "spring", stiffness: 50, damping: 14, delay: 0.1 }}
               className="flex items-center gap-2"
             >
               <div className="h-1 w-16 rounded-full bg-gradient-to-r from-brand-purple to-brand-cyan" />
@@ -52,9 +52,9 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
 
             {/* Giant Display Title */}
             <motion.h1
-              initial={{ opacity: 0, x: -40 }}
+              initial={{ opacity: 0, x: "-100vw" }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+              transition={{ type: "spring", stiffness: 50, damping: 14, delay: 0.2 }}
               className="text-4xl sm:text-5xl lg:text-6xl font-bold font-display tracking-tight text-white leading-[1.08]"
             >
               {hero.title}
@@ -62,9 +62,9 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
 
             {/* Paragraph Content */}
             <motion.p
-              initial={{ opacity: 0, x: -40 }}
+              initial={{ opacity: 0, x: "-100vw" }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
+              transition={{ type: "spring", stiffness: 50, damping: 14, delay: 0.3 }}
               className="text-base sm:text-lg text-slate-300 max-w-xl leading-relaxed"
             >
               {hero.description}
@@ -73,9 +73,9 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
             {/* Call to Action Button */}
             <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <motion.button
-                initial={{ opacity: 0, x: -40 }}
+                initial={{ opacity: 0, x: "-100vw" }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut", delay: 0.4 }}
+                transition={{ type: "spring", stiffness: 50, damping: 14, delay: 0.4 }}
                 onClick={onOpenConsultation}
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-brand-cyan text-slate-950 font-bold px-8 py-4 text-base tracking-wide shadow-md hover:shadow-cyan-400/20 hover:bg-[#00e2c4] active:scale-98 transition-all"
                 id="hero-cta-btn"
@@ -85,9 +85,9 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
               </motion.button>
               
               <motion.div
-                initial={{ opacity: 0, x: -40 }}
+                initial={{ opacity: 0, x: "-100vw" }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut", delay: 0.5 }}
+                transition={{ type: "spring", stiffness: 50, damping: 14, delay: 0.5 }}
                 className="flex items-center gap-2 text-xs text-slate-400 font-medium ml-2 py-2"
               >
                 <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
@@ -187,7 +187,7 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
       </div>
 
       {/* Dynamic Fading Audio Equalizer Visualizer at the very bottom border matching Screenshot */}
-      <div className="absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-[#060b1e] to-transparent flex items-end justify-center select-none pointer-events-none">
+      <div className="absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-white to-transparent flex items-end justify-center select-none pointer-events-none">
         <div className="flex items-end justify-between w-full max-w-[90%] px-4 h-12 overflow-hidden gap-[3px] sm:gap-1.5 opacity-30">
           {equalizerBars.map((barHeight, idx) => {
             // Generate color palette based on position

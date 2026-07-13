@@ -6,10 +6,10 @@
   --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   
-  --color-brand-purple: #8B5CF6;
-  --color-brand-cyan: #00F5D4;
-  --color-brand-magenta: #EC4899;
-  --color-brand-dark: #111827;
+  --color-brand-purple: #0284c7;
+  --color-brand-cyan: #38bdf8;
+  --color-brand-magenta: #db2777;
+  --color-brand-dark: #f0f9ff;
 }
 
 html {
@@ -18,17 +18,122 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background-color: #060b1e;
-  color: #f1f5f9;
+  background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 15%, #ffffff 50%, #f0f9ff 100%) !important;
+  color: #0f172a !important;
   overflow-x: hidden;
 }
 
-/* Custom background patterns matching the screenshots */
+/* Beautiful light sky-blue grid pattern */
 .purple-grid-pattern {
   background-size: 40px 40px;
   background-image: 
-    linear-gradient(to right, rgba(0, 245, 212, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
+    linear-gradient(to right, rgba(2, 132, 199, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(2, 132, 199, 0.05) 1px, transparent 1px) !important;
+}
+
+/* High contrast typography for readability on sky blue & white backgrounds */
+h1, h2, h3, h4, h5, h6, 
+.font-display,
+.text-white, 
+.text-slate-100, 
+.text-slate-200 {
+  color: #0f172a !important;
+}
+
+/* Body texts & labels */
+p, 
+span:not(.bg-brand-cyan):not(.text-slate-950):not(.text-brand-magenta):not(.text-emerald-400):not(.text-red-400), 
+li, 
+.text-slate-300, 
+.text-slate-400 {
+  color: #334155 !important;
+}
+
+/* Translucent scrolling header in Sky Blue */
+#app-header {
+  background-color: rgba(186, 230, 253, 0.85) !important; /* Sky 200 Translucent */
+  border-bottom: 1px solid rgba(14, 165, 233, 0.2) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+#desktop-nav a {
+  color: #0369a1 !important;
+}
+
+#desktop-nav a:hover {
+  color: #0284c7 !important;
+}
+
+/* Beautiful solid or glassmorphic cards in Sky Blue/White theme */
+.bg-\[\#0B132B\]\/80,
+.bg-\[\#0B132B\],
+.bg-\[\#0B132B\]\/95,
+.bg-slate-950\/90,
+.bg-slate-950\/85,
+.bg-slate-950,
+.bg-\[\#0b132b\],
+.bg-\[\#040816\]\/95 {
+  background-color: #ffffff !important;
+  border-color: #bae6fd !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.15) !important;
+}
+
+/* Alternate light sky-blue background sections */
+#trust-bar,
+#stats-section,
+.bg-\[\#0b1229\]\/60 {
+  background-color: #e0f2fe !important; /* Sky 100 block */
+  border-color: #bae6fd !important;
+  color: #0369a1 !important;
+}
+
+#trust-bar h2,
+#stats-section h4 {
+  color: #0369a1 !important;
+}
+
+/* Interactive CTA buttons in high fidelity sky blue */
+#header-cta-btn,
+#hero-cta-btn,
+#mobile-header-cta-btn,
+.bg-brand-cyan {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px 0 rgba(2, 132, 199, 0.25) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+#header-cta-btn:hover,
+#hero-cta-btn:hover,
+#mobile-header-cta-btn:hover,
+.bg-brand-cyan:hover {
+  background-color: #0369a1 !important;
+  box-shadow: 0 6px 20px 0 rgba(2, 132, 199, 0.35) !important;
+}
+
+/* Premium footer in Deep Sky Navy */
+#contact,
+footer {
+  background-color: #075985 !important; /* Deep Sky Blue 800 */
+  border-top: 2px solid #0284c7 !important;
+}
+
+#contact *,
+footer * {
+  color: #f0f9ff !important;
+}
+
+#contact a:hover,
+footer a:hover {
+  color: #38bdf8 !important;
+}
+
+footer input {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .wave-bar {
