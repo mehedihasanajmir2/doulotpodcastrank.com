@@ -33,49 +33,68 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
           
           {/* Left Text Column */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
-            style={{ willChange: "opacity" }}
+          <div
             className="lg:col-span-6 space-y-6"
             id="hero-left-content"
           >
             {/* Top Gradient Divider Line */}
-            <div className="flex items-center gap-2">
+            <motion.div
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+              className="flex items-center gap-2"
+            >
               <div className="h-1 w-16 rounded-full bg-gradient-to-r from-brand-purple to-brand-cyan" />
               <span className="text-xs font-bold tracking-wider uppercase text-slate-400">
                 {hero.tagline}
               </span>
-            </div>
+            </motion.div>
 
             {/* Giant Display Title */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-display tracking-tight text-white leading-[1.08]">
+            <motion.h1
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold font-display tracking-tight text-white leading-[1.08]"
+            >
               {hero.title}
-            </h1>
+            </motion.h1>
 
             {/* Paragraph Content */}
-            <p className="text-base sm:text-lg text-slate-300 max-w-xl leading-relaxed">
+            <motion.p
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
+              className="text-base sm:text-lg text-slate-300 max-w-xl leading-relaxed"
+            >
               {hero.description}
-            </p>
+            </motion.p>
 
             {/* Call to Action Button */}
             <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <button
+              <motion.button
+                initial={{ opacity: 0, x: -40 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut", delay: 0.4 }}
                 onClick={onOpenConsultation}
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-brand-cyan text-slate-950 font-bold px-8 py-4 text-base tracking-wide shadow-md hover:shadow-cyan-400/20 hover:bg-[#00e2c4] active:scale-98 transition-all"
                 id="hero-cta-btn"
               >
                 {hero.buttonText}
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </button>
+              </motion.button>
               
-              <div className="flex items-center gap-2 text-xs text-slate-400 font-medium ml-2 py-2">
+              <motion.div
+                initial={{ opacity: 0, x: -40 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut", delay: 0.5 }}
+                className="flex items-center gap-2 text-xs text-slate-400 font-medium ml-2 py-2"
+              >
                 <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
                 <span>{hero.statBadgeText}</span>
-              </div>
+              </motion.div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Right Image Composition Column */}
           <motion.div
