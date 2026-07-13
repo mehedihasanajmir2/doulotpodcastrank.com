@@ -663,7 +663,7 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
 
                     {/* Email Action */}
                     <a
-                      href={`mailto:${data.contactInfo.email || 'doulotaligettopgrowth@gmail.com'}?subject=Strategy%20Session%20Booking%20Token%20${generatedToken}&body=Hello%20Doulot%20Podcast%20Rank%20Team%2C%0A%0AMy%20booking%20token%20is%20${generatedToken}.%20Please%20let%20me%20know%20how%20we%20can%20proceed%20with%20our%20Podcast%20Strategy%20Session.%0A%0AThank%20you.`}
+                      href={`mailto:${data.contactInfo.email || 'doulotaligettopgrowth@gmail.com'}?subject=Strategy%20Session%20Booking%20Token%20${generatedToken}&body=Hello%20Podcast%20Ranking%20Hub%20Team%2C%0A%0AMy%20booking%20token%20is%20${generatedToken}.%20Please%20let%20me%20know%20how%20we%20can%20proceed%20with%20our%20Podcast%20Strategy%20Session.%0A%0AThank%20you.`}
                       className="flex items-center justify-center gap-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-xs py-3 px-4 transition-all active:scale-98"
                     >
                       <Mail className="h-4 w-4 shrink-0" />

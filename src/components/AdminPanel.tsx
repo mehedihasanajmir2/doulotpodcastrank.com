@@ -280,7 +280,7 @@ export default function AdminPanel() {
             <Settings className="h-5 w-5 animate-spin-slow text-white" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-bold tracking-tight">Doulot Podcast Rank Admin Console</h2>
+            <h2 className="text-base sm:text-lg font-bold tracking-tight">Podcast Ranking Hub Admin Console</h2>
             <p className="text-xs text-slate-400 hidden sm:block">Customize your website's content instantly</p>
           </div>
         </div>

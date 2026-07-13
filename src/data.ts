@@ -224,7 +224,7 @@ export const TESTIMONIALS: Testimonial[] = [
     id: 1,
     name: 'Sarah Johnson',
     role: 'Host',
-    quote: 'Doulot Podcast Rank transformed my show\'s reach in just a few months. Our downloads and listener engagement skyrocketed!',
+    quote: 'Podcast Ranking Hub transformed my show\'s reach in just a few months. Our downloads and listener engagement skyrocketed!',
     stars: 5,
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150'
   },
