@@ -67,16 +67,75 @@ li,
 /* Beautiful solid or glassmorphic cards in Sky Blue/White theme */
 .bg-\[\#0B132B\]\/80,
 .bg-\[\#0B132B\],
+.bg-\[\#0B132B\]\/90,
 .bg-\[\#0B132B\]\/95,
 .bg-slate-950\/90,
 .bg-slate-950\/85,
 .bg-slate-950,
 .bg-\[\#0b132b\],
-.bg-\[\#040816\]\/95 {
+.bg-\[\#040816\]\/95,
+.bg-\[\#090D1E\],
+.bg-\[\#0E1B3D\] {
   background-color: #ffffff !important;
   border-color: #bae6fd !important;
   color: #0f172a !important;
   box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.15) !important;
+}
+
+/* Specific styling for Category list buttons to make them pop */
+.bg-\[\#131E3D\] {
+  background-color: #0284c7 !important; /* Premium active Sky Blue */
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+  transform: scale(1.02);
+  box-shadow: 0 8px 20px -4px rgba(2, 132, 199, 0.3) !important;
+}
+
+.bg-\[\#131E3D\] span,
+.bg-\[\#131E3D\] *,
+.bg-\[\#131E3D\] .font-display {
+  color: #ffffff !important;
+}
+
+.bg-\[\#0B132B\]\/60 {
+  background-color: #ffffff !important; /* White inactive buttons */
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+.bg-\[\#0B132B\]\/60 span,
+.bg-\[\#0B132B\]\/60 *,
+.bg-\[\#0B132B\]\/60 .font-display {
+  color: #334155 !important;
+}
+
+.bg-\[\#0B132B\]\/60:hover {
+  background-color: #f0f9ff !important; /* Hover Sky 50 */
+  border-color: #bae6fd !important;
+}
+
+.bg-\[\#0B132B\]\/60:hover span,
+.bg-\[\#0B132B\]\/60:hover * {
+  color: #0284c7 !important;
+}
+
+/* Focus Target Badge styling */
+.bg-purple-950\/60,
+.bg-purple-950 {
+  background-color: #f0f9ff !important;
+  border: 1px solid #bae6fd !important;
+}
+
+.bg-purple-950\/60 *,
+.bg-purple-950 * {
+  color: #0284c7 !important;
+}
+
+.text-brand-magenta,
+.text-brand-magenta * {
+  color: #db2777 !important;
+  font-weight: 700 !important;
 }
 
 /* Alternate light sky-blue background sections */
@@ -120,9 +179,19 @@ footer {
   border-top: 2px solid #0284c7 !important;
 }
 
-#contact *,
-footer * {
+#contact *:not(#footer-top-cta):not(#footer-top-cta *),
+footer *:not(#footer-top-cta):not(#footer-top-cta *) {
   color: #f0f9ff !important;
+}
+
+#footer-top-cta h3,
+#footer-top-cta h3 * {
+  color: #0f172a !important;
+}
+
+#footer-top-cta .text-slate-950,
+#footer-top-cta .text-slate-950 * {
+  color: #0f172a !important;
 }
 
 #contact a:hover,
