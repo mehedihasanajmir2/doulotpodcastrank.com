@@ -124,6 +124,7 @@ export default function AdminPanel() {
   const [localBooking, setLocalBooking] = useState(data.booking || defaultBooking);
   const [localBookingPlatforms, setLocalBookingPlatforms] = useState(data.bookingPlatforms || defaultBookingPlatforms);
   const [localContact, setLocalContact] = useState(data.contactInfo);
+  const [localEmailNotification, setLocalEmailNotification] = useState(data.emailNotification || { enabled: true, recipientEmail: 'doulotaligettopgrowth@gmail.com', web3formKey: '2fd99b81-d471-4790-8188-68f800316d9f' });
 
   // States for locking/unlocking edit boxes
   const [unlockedFields, setUnlockedFields] = useState<Record<string, boolean>>({});
@@ -269,6 +270,7 @@ export default function AdminPanel() {
       setLocalBooking(data.booking || defaultBooking);
       setLocalBookingPlatforms(data.bookingPlatforms || defaultBookingPlatforms);
       setLocalContact(data.contactInfo);
+      setLocalEmailNotification(data.emailNotification || { enabled: true, recipientEmail: 'doulotaligettopgrowth@gmail.com', web3formKey: '2fd99b81-d471-4790-8188-68f800316d9f' });
       
       // Clear all unlocked boxes when entering Admin Panel
       setUnlockedFields({});
@@ -296,6 +298,7 @@ export default function AdminPanel() {
       booking: localBooking,
       bookingPlatforms: localBookingPlatforms,
       contactInfo: localContact,
+      emailNotification: localEmailNotification,
     });
     setSuccessMsg('All changes successfully saved!');
     setTimeout(() => setSuccessMsg(''), 4000);
@@ -319,6 +322,7 @@ export default function AdminPanel() {
       setLocalBooking(data.booking || defaultBooking);
       setLocalBookingPlatforms(data.bookingPlatforms || defaultBookingPlatforms);
       setLocalContact(data.contactInfo);
+      setLocalEmailNotification(data.emailNotification || { enabled: true, recipientEmail: 'doulotaligettopgrowth@gmail.com', web3formKey: '2fd99b81-d471-4790-8188-68f800316d9f' });
       setSuccessMsg('Reset to default data completed!');
       setTimeout(() => setSuccessMsg(''), 4000);
     }
@@ -1346,6 +1350,69 @@ export default function AdminPanel() {
                         className="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-2.5 text-sm focus:border-violet-500 focus:outline-none text-slate-300"
                       />
                     </LockedField>
+
+                    {/* Automated Email Notifications Card */}
+                    <div className="border border-slate-800/80 rounded-2xl bg-slate-950/40 p-5 mt-4 space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+                        <div className="space-y-0.5">
+                          <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                            <span>📧</span> <span>Automated Email Notifications (Gmail / Business Mail)</span>
+                          </h4>
+                          <p className="text-[11px] text-slate-400">Receive copies of all incoming client order bookings automatically.</p>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[11px] font-bold ${localEmailNotification.enabled ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            {localEmailNotification.enabled ? 'Enabled' : 'Disabled'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setLocalEmailNotification({ ...localEmailNotification, enabled: !localEmailNotification.enabled })}
+                            className={`w-10 h-5 rounded-full p-0.5 transition-colors duration-200 ${localEmailNotification.enabled ? 'bg-violet-500' : 'bg-slate-800'}`}
+                          >
+                            <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${localEmailNotification.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {localEmailNotification.enabled && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                          <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">Recipient Email Address</label>
+                            <input
+                              type="email"
+                              value={localEmailNotification.recipientEmail}
+                              onChange={(e) => setLocalEmailNotification({ ...localEmailNotification, recipientEmail: e.target.value })}
+                              placeholder="e.g. yourbusiness@gmail.com"
+                              className="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-2.5 text-sm focus:border-violet-500 focus:outline-none text-slate-200"
+                            />
+                            <p className="text-[10px] text-slate-500">The destination email address where order notifications will be dispatched.</p>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                              <span>Web3Forms Access Key</span>
+                              <a 
+                                href="https://web3forms.com/" 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="text-[10px] text-violet-400 hover:underline hover:text-violet-300 normal-case font-medium flex items-center gap-0.5"
+                              >
+                                Get Free Key ↗
+                              </a>
+                            </label>
+                            <input
+                              type="text"
+                              value={localEmailNotification.web3formKey}
+                              onChange={(e) => setLocalEmailNotification({ ...localEmailNotification, web3formKey: e.target.value })}
+                              placeholder="e.g. cb92b102-18da-48c6-bf10-3949f508c903"
+                              className="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-2.5 text-xs font-mono focus:border-violet-500 focus:outline-none text-slate-200"
+                            />
+                            <p className="text-[10px] text-slate-500">Necessary to bypass secure server restrictions. Create a free key in 5 seconds via Web3Forms.</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

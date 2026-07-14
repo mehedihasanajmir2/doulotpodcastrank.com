@@ -124,6 +124,46 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
         contactValue: formData.contactValue,
         createdAt: new Date().toISOString()
       });
+
+      // Send automated email notification to Gmail or Business Mail
+      const notificationConfig = data.emailNotification;
+      if (notificationConfig?.enabled) {
+        // Use the configured Web3Forms Access Key, or fallback to a standard helper key if available.
+        // Web3Forms keys are completely free, so the admin can generate their own and save it in the Admin Panel
+        const targetKey = notificationConfig.web3formKey;
+        if (targetKey) {
+          try {
+            await fetch('https://api.web3forms.com/submit', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({
+                access_key: targetKey,
+                subject: `🔥 New Order/Booking [${tokenVal}] Placed by ${formData.name}`,
+                from_name: 'Podcast Ranking Hub Website Notification',
+                title: `New Strategy Session Booking [${tokenVal}]`,
+                "Booking Token": tokenVal,
+                "Client Name": formData.name,
+                "Client Email": formData.email,
+                "Preferred Contact Method": formData.contactType,
+                "Contact Account/Value": formData.contactValue,
+                "Selected Package/Interest": formData.selectedPlan,
+                "Podcast Name": formData.podcastName || 'Not Provided',
+                "Target Platform": formData.platform,
+                "Current Monthly Downloads": formData.monthlyDownloads,
+                "Client Message/Goals": formData.message || 'No goals provided.',
+                "Timestamp": new Date().toLocaleString(),
+                "Go to Admin Panel": window.location.origin
+              })
+            });
+            console.log('Automated email notification sent successfully!');
+          } catch (emailErr) {
+            console.error('Error sending email notification:', emailErr);
+          }
+        }
+      }
     } catch (err) {
       console.error('Error saving booking to Firestore:', err);
       try {

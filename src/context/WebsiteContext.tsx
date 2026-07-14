@@ -84,6 +84,11 @@ export interface WebsiteData {
     twitter: string;
     copyright: string;
   };
+  emailNotification?: {
+    enabled: boolean;
+    recipientEmail: string;
+    web3formKey: string;
+  };
 }
 
 const migrateWebsiteData = (obj: any): any => {
@@ -195,6 +200,11 @@ const DEFAULT_WEBSITE_DATA: WebsiteData = {
     twitter: '#',
     copyright: 'Copyright © 2026 Podcast Ranking Hub, All rights reserved.',
   },
+  emailNotification: {
+    enabled: true,
+    recipientEmail: 'doulotaligettopgrowth@gmail.com',
+    web3formKey: '2fd99b81-d471-4790-8188-68f800316d9f',
+  },
 };
 
 interface WebsiteContextType {
@@ -238,6 +248,20 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
       if (docSnap.exists()) {
         const cloudData = docSnap.data() as WebsiteData;
         const migratedData = migrateWebsiteData(cloudData);
+        
+        // Auto-save the Web3Forms access key if missing or empty in Firestore database configuration
+        if (!migratedData.emailNotification) {
+          migratedData.emailNotification = {
+            enabled: true,
+            recipientEmail: 'doulotaligettopgrowth@gmail.com',
+            web3formKey: '2fd99b81-d471-4790-8188-68f800316d9f'
+          };
+          setDoc(docRef, migratedData).catch(err => console.error('Error auto-updating config with email notifications:', err));
+        } else if (!migratedData.emailNotification.web3formKey) {
+          migratedData.emailNotification.web3formKey = '2fd99b81-d471-4790-8188-68f800316d9f';
+          setDoc(docRef, migratedData).catch(err => console.error('Error auto-updating config with web3formKey:', err));
+        }
+
         setData(migratedData);
         localStorage.setItem('podcast_top_rank_media_data', JSON.stringify(migratedData));
         console.log('Real-time data synced from Firestore successfully');
