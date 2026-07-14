@@ -54,99 +54,126 @@ export default function PricingSection({ onSelectPlan, onOpenConsultation }: Pri
         {/* 3 Packages Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-center items-stretch max-w-5xl mx-auto">
           {pricingPlans.map((plan, index) => {
-            const isPurple = plan.isHighlighted;
+            const nameLower = plan.name.toLowerCase();
+            let styles = {
+              bgClass: 'bg-gradient-to-b from-[#1b0a33] via-[#0c041a] to-[#04010a] border-2 border-violet-500 hover:border-violet-400 shadow-[0_0_35px_rgba(139,92,246,0.3)] ring-1 ring-violet-500/30',
+              priceBgClass: 'bg-violet-900/40 text-white border border-violet-500/50 px-4 py-1.5 font-bold rounded-lg',
+              badgeClass: 'bg-violet-600 text-white font-bold',
+              checkIconClass: 'bg-violet-500 text-white border border-violet-400/40',
+              btnClass: 'bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-extrabold shadow-lg shadow-violet-900/40',
+              textMutedClass: 'text-white font-bold',
+              textNormalClass: 'text-white font-bold',
+              badgeIcon: <Sparkles className="h-3 w-3 text-white fill-current" />,
+              badgeText: 'Standard Package',
+              hasBadge: true
+            };
+
+            if (nameLower.includes('starter')) {
+              styles = {
+                bgClass: 'bg-gradient-to-b from-[#05243a] via-[#02101a] to-[#01050a] border-2 border-cyan-500 hover:border-cyan-400 shadow-[0_0_35px_rgba(6,182,212,0.3)] ring-1 ring-cyan-500/20',
+                priceBgClass: 'bg-cyan-900/40 text-white border border-cyan-500/50 px-4 py-1.5 font-bold rounded-lg',
+                badgeClass: 'bg-cyan-600 text-white font-bold',
+                checkIconClass: 'bg-cyan-500 text-white border border-cyan-400/40',
+                btnClass: 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-extrabold shadow-lg shadow-cyan-950/40',
+                textMutedClass: 'text-white font-bold',
+                textNormalClass: 'text-white font-bold',
+                badgeIcon: <Sparkles className="h-3 w-3 text-white fill-current" />,
+                badgeText: 'Starter Package',
+                hasBadge: true
+              };
+            } else if (nameLower.includes('premium')) {
+              styles = {
+                bgClass: 'bg-gradient-to-b from-[#331c0a] via-[#1a0e05] to-[#0a0502] border-2 border-amber-500 hover:border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.3)] ring-1 ring-amber-500/20',
+                priceBgClass: 'bg-amber-900/40 text-white border border-amber-500/50 px-4 py-1.5 font-bold rounded-lg',
+                badgeClass: 'bg-amber-600 text-white font-bold',
+                checkIconClass: 'bg-amber-500 text-white border border-amber-400/40',
+                btnClass: 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-extrabold shadow-lg shadow-amber-950/40',
+                textMutedClass: 'text-white font-bold',
+                textNormalClass: 'text-white font-bold',
+                badgeIcon: <Flame className="h-3 w-3 text-white fill-current" />,
+                badgeText: 'Premium Package',
+                hasBadge: true
+              };
+            }
+
             return (
-              <motion.div
-                key={plan.name}
-                initial={{ x: 120, opacity: 0 }}
-                whileInView={{ x: 0, opacity: 1 }}
-                viewport={{ once: true, margin: "-50px" }}
-                whileHover={{ y: -8 }}
-                transition={{
-                  x: { duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: index * 0.15 },
-                  opacity: { duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: index * 0.15 },
-                  y: { duration: 0.3, ease: "easeOut" }
-                }}
-                style={{ willChange: "transform, opacity" }}
-                className={`rounded-2xl p-6 sm:p-8 flex flex-col justify-between text-left shadow-lg relative transition-shadow duration-300 ${
-                  isPurple
-                    ? 'bg-brand-purple text-white ring-4 ring-purple-900/50 shadow-purple-950/50'
-                    : 'bg-[#0B132B]/80 text-white border border-slate-800'
-                }`}
-                id={`pricing-card-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                {/* Highlight badges for best value */}
-                {isPurple && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-magenta text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1 shadow-md">
-                    <Flame className="h-3 w-3 fill-current" /> Most Popular
-                  </div>
-                )}
+               <motion.div
+                 key={plan.name}
+                 initial={{ x: 120, opacity: 0 }}
+                 whileInView={{ x: 0, opacity: 1 }}
+                 viewport={{ once: true, margin: "-50px" }}
+                 whileHover={{ y: -8 }}
+                 transition={{
+                   x: { duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: index * 0.15 },
+                   opacity: { duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: index * 0.15 },
+                   y: { duration: 0.3, ease: "easeOut" }
+                 }}
+                 style={{ willChange: "transform, opacity" }}
+                 className={`rounded-2xl p-6 sm:p-8 flex flex-col justify-between text-left shadow-lg relative transition-shadow duration-300 ${styles.bgClass}`}
+                 id={`pricing-card-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
+               >
+                 {/* Highlight badge for specific statuses */}
+                 {styles.hasBadge && (
+                   <div className={`absolute -top-4 left-1/2 -translate-x-1/2 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1 shadow-md ${
+                     nameLower.includes('starter') ? 'bg-cyan-600' : nameLower.includes('premium') ? 'bg-amber-600' : 'bg-violet-600'
+                   }`}>
+                     {styles.badgeIcon} {styles.badgeText}
+                   </div>
+                 )}
 
 
-                <div>
-                  {/* Top Header Row of card */}
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-display text-xl font-bold tracking-tight">
-                      {plan.name}
-                    </h3>
-                    <div
-                      className={`h-6 w-6 rounded-full flex items-center justify-center ${
-                        isPurple ? 'bg-white/20 text-white' : 'bg-purple-950 text-purple-300'
-                      }`}
-                    >
-                      <Check className="h-4 w-4" />
-                    </div>
-                  </div>
+                 <div>
+                   {/* Top Header Row of card */}
+                   <div className="flex items-center justify-between mb-4">
+                     <h3 className="font-display text-2xl font-black tracking-tight text-white">
+                       {plan.name}
+                     </h3>
+                     <div className={`h-6 w-6 rounded-full flex items-center justify-center ${styles.checkIconClass}`}>
+                       <Check className="h-4 w-4" strokeWidth={3} />
+                     </div>
+                   </div>
 
-                  {/* Slogan details */}
-                  <p className={`text-xs leading-relaxed mb-6 ${isPurple ? 'text-purple-100' : 'text-slate-300'}`}>
-                    {plan.description}
-                  </p>
+                   {/* Slogan details */}
+                   <p className="text-sm leading-relaxed mb-6 text-white font-extrabold drop-shadow-md">
+                     {plan.description}
+                   </p>
 
-                  {/* Big price tag block */}
-                  <div className="mb-6 flex items-baseline">
-                    <div
-                      className={`rounded-lg px-4 py-2 font-display text-2xl font-black ${
-                        isPurple ? 'bg-white/15 text-white' : 'bg-brand-purple/20 text-purple-300'
-                      }`}
-                    >
-                      $ {plan.price}
-                    </div>
-                    <span className={`text-[10px] font-semibold ml-2 uppercase tracking-wider ${isPurple ? 'text-purple-200' : 'text-slate-400'}`}>
-                      One-time package
-                    </span>
-                  </div>
+                   {/* Big price tag block */}
+                   <div className="mb-6 flex items-baseline">
+                     <div className={`font-display text-3xl font-black text-white ${styles.priceBgClass} drop-shadow`}>
+                       $ {plan.price}
+                     </div>
+                     <span className="text-xs font-black ml-3 uppercase tracking-wider text-white drop-shadow-sm">
+                       One-time package
+                     </span>
+                   </div>
 
-                  {/* Feature lists */}
-                  <div className={`border-t pt-6 space-y-3 ${isPurple ? 'border-white/10' : 'border-slate-800'}`}>
-                    {plan.features.map((feature, fIdx) => (
-                      <div key={fIdx} className="flex items-start gap-2.5 text-xs font-semibold leading-tight">
-                        <div className={`mt-0.5 rounded-full p-0.5 ${isPurple ? 'bg-white/20 text-white' : 'bg-purple-950 text-purple-300'}`}>
-                          <Check className="h-3 w-3" strokeWidth={3} />
-                        </div>
-                        <span className={isPurple ? 'text-purple-50' : 'text-slate-200'}>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                   {/* Feature lists */}
+                   <div className={`border-t pt-6 space-y-3 ${nameLower.includes('starter') ? 'border-cyan-500/20' : nameLower.includes('premium') ? 'border-amber-500/20' : 'border-violet-500/20'}`}>
+                     {plan.features.map((feature, fIdx) => (
+                       <div key={fIdx} className="flex items-start gap-3 text-sm font-bold leading-tight">
+                         <div className={`mt-0.5 rounded-full p-0.5 ${styles.checkIconClass}`}>
+                           <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                         </div>
+                         <span className="text-white font-extrabold text-sm drop-shadow-sm">{feature}</span>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
 
-                {/* Card Button CTA */}
-                <div className="mt-8 pt-4">
-                  <button
-                    onClick={() => onSelectPlan(plan.name)}
-                    className={`w-full py-3 px-4 rounded-xl text-center text-xs font-bold uppercase tracking-wider transition-all active:scale-97 ${
-                      isPurple
-                        ? 'bg-white text-brand-purple hover:bg-slate-50 shadow-md'
-                        : 'bg-brand-purple text-white hover:bg-indigo-600 shadow-sm'
-                    }`}
-                    id={`pricing-btn-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    Select Plan & Grow
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })}
+                 {/* Card Button CTA */}
+                 <div className="mt-8 pt-4">
+                   <button
+                     onClick={() => onSelectPlan(plan.name)}
+                     className={`w-full py-3 px-4 rounded-xl text-center text-xs font-black uppercase tracking-wider transition-all active:scale-97 ${styles.btnClass}`}
+                     id={`pricing-btn-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
+                   >
+                     Select Plan & Grow
+                   </button>
+                 </div>
+               </motion.div>
+             );
+           })}
         </div>
         
       </div>

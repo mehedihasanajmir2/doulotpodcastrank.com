@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ImageUploader from './ImageUploader';
-import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 const AdminPanelContext = React.createContext<{
@@ -197,9 +197,30 @@ export default function AdminPanel() {
   };
 
   useEffect(() => {
-    if (isAdminPanelOpen) {
-      fetchBookings();
-    }
+    if (!isAdminPanelOpen) return;
+
+    setBookingsLoading(true);
+    const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'));
+    
+    // Establish a real-time listener so bookings appear instantly in the admin panel
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const list: any[] = [];
+      querySnapshot.forEach((docSnap) => {
+        list.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      setBookings(list);
+      setBookingsLoading(false);
+    }, (err) => {
+      console.error('Error listening to bookings:', err);
+      setBookingsLoading(false);
+      try {
+        handleFirestoreError(err, 'list', 'bookings');
+      } catch (e) {
+        // Fallback
+      }
+    });
+
+    return () => unsubscribe();
   }, [isAdminPanelOpen, activeTab]);
 
   const handleToggleLock = (fieldId: string, label: string) => {

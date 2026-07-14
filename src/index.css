@@ -325,5 +325,169 @@ footer input {
   background-color: #6d28d9 !important;
 }
 
+/* --- Consultation Modal Isolated Styles --- */
+#consultation-modal-card {
+  background-color: #090d1e !important; /* Force deep dark cosmic blue background */
+  border-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+#consultation-modal-card .md\:col-span-5 {
+  background: linear-gradient(to bottom, rgba(2, 6, 23, 0.95), #0a0e23) !important;
+}
+
+#consultation-modal-card h3,
+#consultation-modal-card h4,
+#consultation-modal-card h5,
+#consultation-modal-card .text-white,
+#consultation-modal-card .text-slate-100,
+#consultation-modal-card .text-slate-200 {
+  color: #ffffff !important;
+}
+
+#consultation-modal-card p,
+#consultation-modal-card span:not(.text-emerald-400):not(.text-rose-400):not(.text-violet-400):not(.text-emerald-500):not(.text-violet-500):not(.bg-violet-600):not(.text-transparent):not(.bg-clip-text):not(.text-cyan-300),
+#consultation-modal-card label,
+#consultation-modal-card li,
+#consultation-modal-card .text-slate-300,
+#consultation-modal-card .text-slate-400,
+#consultation-modal-card .text-slate-500 {
+  color: #cbd5e1 !important; /* Force high-contrast light slate text */
+}
+
+#consultation-modal-card input,
+#consultation-modal-card textarea,
+#consultation-modal-card select {
+  background-color: #0f172a !important; /* Deep dark background for input fields */
+  color: #ffffff !important; /* Force pure white text inside inputs */
+  border-color: #334155 !important;
+}
+
+#consultation-modal-card input::placeholder,
+#consultation-modal-card textarea::placeholder {
+  color: #64748b !important; /* Slate-500 placeholders */
+}
+
+#consultation-modal-card input:focus,
+#consultation-modal-card textarea:focus,
+#consultation-modal-card select:focus {
+  border-color: #8b5cf6 !important; /* Violet-500 focus border */
+}
+
+#consultation-modal-card select option {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+#consultation-modal-card button {
+  color: inherit;
+}
+
+#consultation-modal-card button.text-white,
+#consultation-modal-card button .text-white {
+  color: #ffffff !important;
+}
+
+#consultation-modal-card button[type="button"].border-violet-500,
+#consultation-modal-card button[type="button"].border-cyan-500 {
+  color: #ffffff !important;
+}
+
+#consultation-modal-card button[type="button"].text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+#consultation-modal-card button[type="button"].text-slate-400:hover {
+  color: #f1f5f9 !important;
+}
+
+#btn-submit,
+#btn-close {
+  background: linear-gradient(to right, #7c3aed, #db2777) !important;
+  color: #ffffff !important;
+}
+
+#btn-submit *,
+#btn-close * {
+  color: #ffffff !important;
+}
+
+#btn-submit:hover,
+#btn-close:hover {
+  background: linear-gradient(to right, #6d28d9, #be185d) !important;
+}
+
+#btn-cancel {
+  color: #94a3b8 !important;
+}
+
+#btn-cancel:hover {
+  color: #f1f5f9 !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+#consultation-modal-card .bg-slate-900\/90 {
+  background-color: #0f172a !important;
+}
+
+#consultation-modal-card .bg-slate-950\/60 {
+  background-color: #020617 !important;
+}
+
+#consultation-modal-card .text-cyan-300,
+#consultation-modal-card .text-cyan-300 * {
+  color: #67e8f9 !important;
+}
+
+#consultation-modal-card .text-violet-400,
+#consultation-modal-card .text-violet-400 * {
+  color: #a78bfa !important;
+}
+
+#consultation-modal-card a.bg-emerald-600 {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+#consultation-modal-card a.bg-emerald-600 * {
+  color: #ffffff !important;
+}
+
+#consultation-modal-card a.bg-slate-800 {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+#consultation-modal-card a.bg-slate-800 * {
+  color: #ffffff !important;
+}
+
+#consultation-modal-card button.bg-slate-800 {
+  background-color: #1e293b !important;
+  color: #cbd5e1 !important;
+}
+
+#consultation-modal-card button.bg-slate-800 * {
+  color: #cbd5e1 !important;
+}
+
+#consultation-modal-card span.text-transparent {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* --- Pricing Section Overrides to prevent global light theme override from darkening the text --- */
+#pricing [id^="pricing-card-"] h3,
+#pricing [id^="pricing-card-"] p,
+#pricing [id^="pricing-card-"] span,
+#pricing [id^="pricing-card-"] li,
+#pricing [id^="pricing-card-"] button,
+#pricing [id^="pricing-card-"] div,
+#pricing [id^="pricing-card-"] svg {
+  color: #ffffff !important;
+}
+
+
+
 
 
