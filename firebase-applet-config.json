@@ -1,10 +1,12 @@
 {
-  "projectId": "doulot-ali-gettop-growth",
-  "appId": "1:939959660821:web:2e48b101bfca7164ab391c",
-  "apiKey": "AIzaSyAQ2SLV5Q30PdZL14kwbbnuizBie3b5mwM",
-  "authDomain": "doulot-ali-gettop-growth.firebaseapp.com",
+  "projectId": "podcast-ranking-hub",
+  "appId": "1:726780280943:web:5e9b71da96a05a52c8cd9a",
+  "apiKey": "AIzaSyBfPHVHFwqKvGMWWKjG7YVsmYSyLRCQX7Y",
+  "authDomain": "podcast-ranking-hub.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-doulotali-3645692c-26a0-4df1-a411-4549148162cc",
-  "storageBucket": "doulot-ali-gettop-growth.firebasestorage.app",
-  "messagingSenderId": "939959660821",
-  "measurementId": ""
+  "storageBucket": "podcast-ranking-hub.firebasestorage.app",
+  "messagingSenderId": "726780280943",
+  "measurementId": "",
+  "oAuthClientId": "726780280943-e4n2av261pqbf46o618iiajaci91lhbb.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
 }
