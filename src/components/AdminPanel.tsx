@@ -22,10 +22,20 @@ import {
   Unlock,
   Mail,
   MessageCircle,
-  ExternalLink
+  ExternalLink,
+  Database,
+  Copy,
+  Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ImageUploader from './ImageUploader';
+import {
+  getSupabaseCredentials,
+  saveSupabaseCredentials,
+  clearSupabaseCredentials,
+  isSupabaseConfigured,
+  SUPABASE_SQL_SETUP
+} from '../lib/supabase';
 
 const AdminPanelContext = React.createContext<{
   unlockedFields: Record<string, boolean>;
@@ -76,10 +86,15 @@ export default function AdminPanel() {
     logout,
     firestoreError,
     clearFirestoreError,
-    isSyncing
+    isSyncing,
+    bookings,
+    bookingsLoading,
+    deleteBooking,
+    syncWithDatabase,
+    isDbConnected
   } = useWebsiteData();
 
-  const [activeTab, setActiveTab] = useState<'hero' | 'about' | 'episodes' | 'pricing' | 'testimonials' | 'team' | 'booking' | 'footer' | 'bookings'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'about' | 'episodes' | 'pricing' | 'testimonials' | 'team' | 'booking' | 'footer' | 'bookings' | 'database'>('hero');
   const [successMsg, setSuccessMsg] = useState('');
   const [isSaveSuccess, setIsSaveSuccess] = useState(false);
 
@@ -134,74 +149,56 @@ export default function AdminPanel() {
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  // Bookings state and logic
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [bookingsLoading, setBookingsLoading] = useState(false);
+  // Supabase Database Config states
+  const [localDbUrl, setLocalDbUrl] = useState(() => getSupabaseCredentials()?.url || '');
+  const [localDbKey, setLocalDbKey] = useState(() => getSupabaseCredentials()?.anonKey || '');
+  const [copiedSetup, setCopiedSetup] = useState(false);
+
+  const handleCopySQL = () => {
+    navigator.clipboard.writeText(SUPABASE_SQL_SETUP);
+    setCopiedSetup(true);
+    setTimeout(() => setCopiedSetup(false), 2500);
+  };
+
+  const handleSaveSupabase = async () => {
+    const url = localDbUrl.trim();
+    const key = localDbKey.trim();
+
+    if (!url || !key) {
+      alert('Please fill out both the Supabase URL and Anon API Key fields.');
+      return;
+    }
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      alert('The Supabase URL must start with http:// or https://');
+      return;
+    }
+
+    saveSupabaseCredentials(url, key);
+    setSuccessMsg('Supabase credentials updated! Connecting...');
+    setTimeout(() => setSuccessMsg(''), 4000);
+    await syncWithDatabase();
+  };
+
+  const handleDisconnectSupabase = async () => {
+    if (window.confirm('Are you sure you want to disconnect from Supabase and fall back to local storage browser sandbox?')) {
+      clearSupabaseCredentials();
+      setLocalDbUrl('');
+      setLocalDbKey('');
+      setSuccessMsg('Disconnected from Supabase! Switched to browser fallback.');
+      setTimeout(() => setSuccessMsg(''), 4000);
+      await syncWithDatabase();
+    }
+  };
 
   // Clear unlocked fields whenever the admin panel open/close state toggles to enforce automatic relocking
   useEffect(() => {
     setUnlockedFields({});
   }, [isAdminPanelOpen]);
 
-  const handleFirestoreError = (error: unknown, operationType: 'create' | 'update' | 'delete' | 'list' | 'get' | 'write', path: string | null) => {
-    const errMessage = error instanceof Error ? error.message : String(error);
-    const errInfo = {
-      error: errMessage,
-      operationType,
-      path,
-      authInfo: {
-        userId: null,
-        email: null,
-        emailVerified: null,
-        isAnonymous: null,
-        tenantId: null
-      }
-    };
-    console.error('Firestore Error Info:', JSON.stringify(errInfo));
-    throw new Error(JSON.stringify(errInfo));
-  };
-
-  const fetchBookings = () => {
-    setBookingsLoading(true);
-    try {
-      const savedBookings = localStorage.getItem('podcast_top_rank_bookings');
-      if (savedBookings) {
-        const parsed = JSON.parse(savedBookings);
-        if (Array.isArray(parsed)) {
-          setBookings(parsed);
-        } else {
-          setBookings([]);
-        }
-      } else {
-        setBookings([]);
-      }
-    } catch (err) {
-      console.error('Error fetching bookings:', err);
-    } finally {
-      setBookingsLoading(false);
-    }
-  };
-
-  const handleDeleteBooking = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this booking? This action is permanent.')) {
-      try {
-        const savedBookings = localStorage.getItem('podcast_top_rank_bookings');
-        let list: any[] = [];
-        if (savedBookings) {
-          list = JSON.parse(savedBookings);
-        }
-        const updated = list.filter((b: any) => b.id !== id);
-        localStorage.setItem('podcast_top_rank_bookings', JSON.stringify(updated));
-        setBookings(updated);
-      } catch (err) {
-        console.error('Error deleting booking:', err);
-      }
-    }
-  };
-
   useEffect(() => {
     if (!isAdminPanelOpen) return;
-    fetchBookings();
+    syncWithDatabase();
   }, [isAdminPanelOpen, activeTab]);
 
   const handleToggleLock = (fieldId: string, label: string) => {
@@ -399,15 +396,15 @@ export default function AdminPanel() {
 
       {/* Cloud Sync Status/Error Banner */}
       {firestoreError && (
-        <div className="bg-rose-500/10 border-b border-rose-500/30 text-rose-200 px-4 py-3 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in shrink-0" id="firestore-sync-warning">
+        <div className="bg-rose-500/10 border-b border-rose-500/30 text-rose-200 px-4 py-3 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in shrink-0" id="supabase-sync-warning">
           <div className="flex items-start gap-2.5">
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-500 text-slate-950 font-bold text-[10px]">!</span>
             <div>
-              <p className="font-semibold text-rose-300">Firestore Cloud Sync Warning</p>
+              <p className="font-semibold text-rose-300">Supabase Cloud Sync Alert</p>
               <p className="text-slate-300 mt-0.5">{firestoreError}</p>
               <p className="text-slate-400 mt-1">
-                Your edits are safely active and saved locally in your browser, but we failed to sync them to your cloud Firestore database. 
-                This usually means the database rules need to be published on your Cloud Firestore console, or you are experiencing connectivity issues.
+                Your edits are active and saved safely in your browser's local cache, but syncing to your cloud Supabase database failed.
+                Please ensure you have run the required table creation SQL scripts in your Supabase SQL Editor and that your credentials are correct.
               </p>
             </div>
           </div>
@@ -434,6 +431,7 @@ export default function AdminPanel() {
             { id: 'booking', name: 'Book Strategy Session', icon: Calendar },
             { id: 'footer', name: 'Footer & Contacts', icon: FileText },
             { id: 'bookings', name: 'Client Bookings', icon: ListPlus },
+            { id: 'database', name: 'Database Setup', icon: Database },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1463,7 +1461,7 @@ export default function AdminPanel() {
                     
                     <button
                       type="button"
-                      onClick={fetchBookings}
+                      onClick={syncWithDatabase}
                       disabled={bookingsLoading}
                       className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 active:scale-95 transition-all disabled:opacity-50"
                     >
@@ -1474,7 +1472,7 @@ export default function AdminPanel() {
                   {bookingsLoading ? (
                     <div className="py-20 text-center space-y-3">
                       <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
-                      <p className="text-xs text-slate-400">Loading strategy bookings from Firestore...</p>
+                      <p className="text-xs text-slate-400">Loading strategy bookings from Database...</p>
                     </div>
                   ) : bookings.length === 0 ? (
                     <div className="py-16 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/10">
@@ -1518,7 +1516,11 @@ export default function AdminPanel() {
                                 {/* Delete action */}
                                 <button
                                   type="button"
-                                  onClick={() => handleDeleteBooking(booking.id)}
+                                  onClick={() => {
+                                    if (window.confirm('Are you sure you want to delete this booking? This action is permanent.')) {
+                                      deleteBooking(booking.id);
+                                    }
+                                  }}
                                   className="inline-flex items-center justify-center p-2 rounded-xl bg-rose-950/30 border border-rose-900/30 text-rose-400 hover:bg-rose-900/30 transition-all"
                                   title="Delete Booking record"
                                 >
@@ -1603,6 +1605,151 @@ export default function AdminPanel() {
                       })}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Database Setup Tab */}
+            {activeTab === 'database' && (
+              <div className="space-y-6" id="admin-database-tab">
+                <div className="border border-slate-800 rounded-2xl bg-slate-900/30 p-6 space-y-6">
+                  {/* Tab Title */}
+                  <div className="border-b border-slate-800 pb-4">
+                    <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+                      <Database className="h-5 w-5 text-violet-400" />
+                      <span>Configure Supabase Cloud Database</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Integrate with Supabase for absolute lifetime persistence of your website configs, customization changes, and customer booking details—entirely free of charge!
+                    </p>
+                  </div>
+
+                  {/* Dynamic Status Badges */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="border border-slate-800 bg-slate-950/40 rounded-xl p-4 flex items-center gap-3">
+                      <div className={`h-3 w-3 rounded-full ${isSupabaseConfigured() && isDbConnected ? 'bg-emerald-500 animate-pulse' : isSupabaseConfigured() ? 'bg-amber-500 animate-pulse' : 'bg-blue-500 animate-pulse'}`} />
+                      <div>
+                        <span className="block text-[10px] text-slate-500 uppercase font-bold tracking-wider">Database Mode</span>
+                        <span className="text-xs font-bold text-slate-200">
+                          {isSupabaseConfigured() && isDbConnected ? 'Cloud Production Server' : isSupabaseConfigured() ? 'Cloud Connection Error' : 'Offline Sandbox Fallback'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="border border-slate-800 bg-slate-950/40 rounded-xl p-4 flex items-center gap-3">
+                      <span className="text-lg">⚡</span>
+                      <div>
+                        <span className="block text-[10px] text-slate-500 uppercase font-bold tracking-wider">Provider Tier</span>
+                        <span className="text-xs font-bold text-violet-400">100% Free Lifetime Tier</span>
+                      </div>
+                    </div>
+
+                    <div className="border border-slate-800 bg-slate-950/40 rounded-xl p-4 flex items-center gap-3">
+                      <span className="text-lg">🔄</span>
+                      <div>
+                        <span className="block text-[10px] text-slate-500 uppercase font-bold tracking-wider">Synchronization</span>
+                        <span className="text-xs font-bold text-slate-200">
+                          {isSupabaseConfigured() && isDbConnected ? 'Active Realtime Cloud' : 'Browser LocalStorage'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Credentials Section */}
+                  <div className="space-y-4">
+                    <div className="bg-slate-950/40 border border-slate-800 rounded-xl p-5 space-y-4">
+                      <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                        <span>🔑</span> <span>Supabase Connection API Credentials</span>
+                      </h4>
+                      <p className="text-xs text-slate-400">
+                        Input your Project URL and Anon API key to sync this website and bookings automatically to the cloud. Keep your keys secret.
+                      </p>
+
+                      <div className="grid grid-cols-1 gap-4 pt-2">
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-extrabold text-slate-300 uppercase tracking-wider">Supabase API URL</label>
+                          <input
+                            type="text"
+                            value={localDbUrl}
+                            onChange={(e) => setLocalDbUrl(e.target.value)}
+                            placeholder="e.g.: https://your-project-id.supabase.co"
+                            className="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-2.5 text-xs font-mono text-slate-200 focus:border-violet-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-extrabold text-slate-300 uppercase tracking-wider">Supabase Anon Public API Key</label>
+                          <input
+                            type="password"
+                            value={localDbKey}
+                            onChange={(e) => setLocalDbKey(e.target.value)}
+                            placeholder="e.g.: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhdGNo..."
+                            className="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-2.5 text-xs font-mono text-slate-200 focus:border-violet-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3 pt-2 border-t border-slate-800/60">
+                        <button
+                          type="button"
+                          onClick={handleSaveSupabase}
+                          className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 active:scale-95 transition-all shadow-md flex items-center gap-1.5"
+                        >
+                          <Save className="h-3.5 w-3.5" />
+                          <span>Link & Sync Supabase Database</span>
+                        </button>
+
+                        {isSupabaseConfigured() && (
+                          <button
+                            type="button"
+                            onClick={handleDisconnectSupabase}
+                            className="px-5 py-2.5 rounded-xl text-xs font-bold text-rose-400 bg-rose-950/10 border border-rose-900/30 hover:bg-rose-950/30 active:scale-95 transition-all"
+                          >
+                            Disconnect Cloud Database
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SQL Setup Instructions */}
+                  <div className="space-y-4">
+                    <div className="bg-slate-950/40 border border-slate-800 rounded-xl p-5 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/60 pb-3">
+                        <div>
+                          <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                            <span>🛠️</span> <span>First Time SQL Setup Instructions</span>
+                          </h4>
+                          <p className="text-xs text-slate-400 mt-1">
+                            Follow these simple 5 steps to establish the permanent database tables in Supabase:
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleCopySQL}
+                          className="px-4 py-2 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 active:scale-95 transition-all flex items-center gap-1.5 shrink-0"
+                        >
+                          {copiedSetup ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                          <span>{copiedSetup ? 'Copied!' : 'Copy SQL Query'}</span>
+                        </button>
+                      </div>
+
+                      <ol className="text-xs text-slate-300 space-y-2 list-decimal list-inside pl-1">
+                        <li>Go to <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:underline">supabase.com</a> and sign up for a 100% free lifetime account.</li>
+                        <li>Create a new project (choose any project name and database password).</li>
+                        <li>Once the project is initialized, click on the <span className="text-violet-400 font-bold">"SQL Editor"</span> tab on the left sidebar in your Supabase dashboard.</li>
+                        <li>Click <span className="text-violet-400 font-bold">"New query"</span>, paste the copied SQL setup script below, and click <span className="text-violet-400 font-bold">"Run"</span>.</li>
+                        <li>Go to <span className="text-violet-400 font-bold">"Project Settings" ➔ "API"</span> in your Supabase dashboard, copy your <span className="font-bold">Project URL</span> and <span className="font-bold">anon/public API key</span>, and paste them into the connection fields above!</li>
+                      </ol>
+
+                      <div className="space-y-1.5 pt-2">
+                        <span className="block text-xs font-extrabold text-slate-400 uppercase tracking-wider font-sans">SQL Setup Script</span>
+                        <pre className="w-full h-40 rounded-xl bg-slate-950 border border-slate-800 p-4 text-[11px] font-mono text-slate-300 overflow-y-auto leading-relaxed select-all">
+                          {SUPABASE_SQL_SETUP}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

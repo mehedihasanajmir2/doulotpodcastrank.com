@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
 import {
   TeamMember,
   PodcastEpisode,
@@ -78,6 +79,7 @@ export interface WebsiteData {
     phone: string;
     address: string;
     facebook: string;
+    indigo?: string;
     instagram: string;
     twitter: string;
     linkedin: string;
@@ -221,9 +223,18 @@ interface WebsiteContextType {
   logout: () => void;
   isAdminPanelOpen: boolean;
   setAdminPanelOpen: (open: boolean) => void;
-  firestoreError: string | null;
+  firestoreError: string | null; // For backward compatibility with AdminPanel error message
+  databaseError: string | null;
   clearFirestoreError: () => void;
+  clearDatabaseError: () => void;
   isSyncing: boolean;
+  isDbConnected: boolean;
+  bookings: any[];
+  bookingsLoading: boolean;
+  fetchBookings: () => Promise<void>;
+  addBooking: (booking: any) => Promise<void>;
+  deleteBooking: (id: string) => Promise<void>;
+  syncWithDatabase: () => Promise<void>;
 }
 
 const WebsiteContext = createContext<WebsiteContextType | undefined>(undefined);
@@ -245,40 +256,292 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [isAdminLoginOpen, setAdminLoginOpen] = useState(false);
   const [isAdminPanelOpen, setAdminPanelOpen] = useState(false);
-  const [firestoreError, setFirestoreError] = useState<string | null>(null);
+  const [databaseError, setDatabaseError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isDbConnected, setIsDbConnected] = useState(false);
 
-  const clearFirestoreError = () => setFirestoreError(null);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
 
-  // Load local storage and manage state
+  const clearDatabaseError = () => setDatabaseError(null);
+  const clearFirestoreError = () => setDatabaseError(null); // Keep alias for backward compatibility
+
+  // Helper to load client-side bookings
+  const loadLocalBookings = () => {
+    const saved = localStorage.getItem('podcast_top_rank_bookings');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setBookings(parsed);
+        }
+      } catch (e) {
+        console.error('Failed to parse local bookings:', e);
+      }
+    }
+  };
+
+  // Sync data from Supabase
+  const syncWithDatabase = async () => {
+    if (!isSupabaseConfigured()) {
+      setIsDbConnected(false);
+      loadLocalBookings();
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      setIsDbConnected(false);
+      loadLocalBookings();
+      return;
+    }
+
+    setIsSyncing(true);
+    setDatabaseError(null);
+
+    try {
+      // 1. Fetch website configurations
+      const { data: configData, error: configError } = await supabase
+        .from('website_configs')
+        .select('value')
+        .eq('key', 'website_data')
+        .maybeSingle();
+
+      if (configError) {
+        throw configError;
+      }
+
+      if (configData && configData.value) {
+        const migrated = migrateWebsiteData(configData.value);
+        setData(migrated);
+        localStorage.setItem('podcast_top_rank_media_data', JSON.stringify(migrated));
+        setIsDbConnected(true);
+      } else {
+        // No config row exists in Supabase. Let's seed it!
+        const { error: seedError } = await supabase
+          .from('website_configs')
+          .upsert({ key: 'website_data', value: data });
+
+        if (seedError) {
+          console.warn('Could not seed initial website data to Supabase (check if table is created):', seedError);
+        } else {
+          setIsDbConnected(true);
+        }
+      }
+
+      // 2. Fetch bookings
+      await fetchBookings();
+    } catch (err: any) {
+      console.warn('Supabase synchronization fallback initiated:', err);
+      setIsDbConnected(false);
+      
+      let userFriendlyError = err.message || String(err);
+      if (
+        err.code === '42P01' || 
+        userFriendlyError.includes('relation "website_configs" does not exist') || 
+        userFriendlyError.includes('relation "bookings" does not exist') ||
+        userFriendlyError.includes('42P01')
+      ) {
+        userFriendlyError = 'Database tables "website_configs" and "bookings" do not exist yet in your Supabase project. Please go to the "Database Setup" tab in the Admin Panel, copy the SQL setup script, and run it inside your Supabase SQL Editor.';
+      } else if (
+        userFriendlyError.includes('Failed to fetch') || 
+        userFriendlyError.includes('FetchError') ||
+        userFriendlyError.includes('NetworkError')
+      ) {
+        userFriendlyError = 'Could not connect to Supabase. Please double-check your internet connection, Supabase URL, and Anon Key configuration.';
+      } else if (err.code === 'PGRST111' || userFriendlyError.includes('PGRST111')) {
+        userFriendlyError = 'Invalid API key or URL. Please verify your Supabase URL and Anon Public Key are correct in the "Database Setup" tab.';
+      }
+      
+      setDatabaseError(userFriendlyError);
+      loadLocalBookings();
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Fetch bookings from database
+  const fetchBookings = async () => {
+    setBookingsLoading(true);
+    const supabase = getSupabaseClient();
+
+    if (!supabase || !isSupabaseConfigured()) {
+      loadLocalBookings();
+      setBookingsLoading(false);
+      return;
+    }
+
+    try {
+      const { data: cloudBookings, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (cloudBookings) {
+        // Map database underscored keys back to camelCase for UI compatibility if needed, or support both
+        const formatted = cloudBookings.map((b: any) => ({
+          id: b.id,
+          token: b.token,
+          name: b.name,
+          email: b.email,
+          phone: b.phone,
+          date: b.date,
+          time: b.time,
+          company: b.company,
+          contactType: b.contact_type || b.contactType,
+          contactValue: b.contact_value || b.contactValue,
+          createdAt: b.created_at || b.createdAt
+        }));
+
+        setBookings(formatted);
+        localStorage.setItem('podcast_top_rank_bookings', JSON.stringify(formatted));
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch bookings from Supabase:', err);
+      loadLocalBookings();
+    } finally {
+      setBookingsLoading(false);
+    }
+  };
+
+  // Save new booking
+  const addBooking = async (booking: any) => {
+    // 1. Save locally
+    const existing = localStorage.getItem('podcast_top_rank_bookings');
+    let list: any[] = [];
+    if (existing) {
+      try {
+        list = JSON.parse(existing);
+      } catch (e) {
+        list = [];
+      }
+    }
+    const newList = [booking, ...list];
+    localStorage.setItem('podcast_top_rank_bookings', JSON.stringify(newList));
+    setBookings(newList);
+
+    // 2. Save to Supabase if configured
+    const supabase = getSupabaseClient();
+    if (supabase && isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.from('bookings').insert({
+          id: booking.id,
+          token: booking.token,
+          name: booking.name,
+          email: booking.email,
+          phone: booking.phone,
+          date: booking.date,
+          time: booking.time,
+          company: booking.company,
+          contact_type: booking.contactType,
+          contact_value: booking.contactValue,
+          created_at: booking.createdAt
+        });
+
+        if (error) throw error;
+        console.log('Booking successfully saved to Supabase!');
+      } catch (err) {
+        console.error('Failed to save booking to Supabase, fell back to local storage:', err);
+      }
+    }
+  };
+
+  // Delete booking
+  const deleteBooking = async (id: string) => {
+    // 1. Delete locally
+    const saved = localStorage.getItem('podcast_top_rank_bookings');
+    let list: any[] = [];
+    if (saved) {
+      try {
+        list = JSON.parse(saved);
+      } catch (e) {
+        list = [];
+      }
+    }
+    const updated = list.filter((b: any) => b.id !== id);
+    localStorage.setItem('podcast_top_rank_bookings', JSON.stringify(updated));
+    setBookings(updated);
+
+    // 2. Delete from Supabase if configured
+    const supabase = getSupabaseClient();
+    if (supabase && isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.from('bookings').delete().eq('id', id);
+        if (error) throw error;
+        console.log('Booking successfully deleted from Supabase!');
+      } catch (err) {
+        console.error('Failed to delete booking from Supabase:', err);
+      }
+    }
+  };
+
+  // Initial Sync effect
   useEffect(() => {
     const loggedIn = localStorage.getItem('podcast_top_rank_admin_logged_in');
     if (loggedIn === 'true') {
       setIsAdminLoggedIn(true);
     }
+    syncWithDatabase();
   }, []);
 
-  const updateData = (newData: Partial<WebsiteData>) => {
+  const updateData = async (newData: Partial<WebsiteData>) => {
     setIsSyncing(true);
     const updated = { ...data, ...newData };
     setData(updated);
     localStorage.setItem('podcast_top_rank_media_data', JSON.stringify(updated));
+
+    // Save to Supabase if configured
+    const supabase = getSupabaseClient();
+    if (supabase && isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from('website_configs')
+          .upsert({ key: 'website_data', value: updated, updated_at: new Date().toISOString() });
+
+        if (error) throw error;
+        setIsDbConnected(true);
+        setDatabaseError(null);
+      } catch (err: any) {
+        console.error('Failed to save configuration to Supabase:', err);
+        setDatabaseError(`Supabase Sync Error: ${err.message || String(err)}`);
+      }
+    }
+
     setTimeout(() => {
       setIsSyncing(false);
-    }, 100);
+    }, 150);
   };
 
-  const resetToDefaults = () => {
+  const resetToDefaults = async () => {
     setIsSyncing(true);
     setData(DEFAULT_WEBSITE_DATA);
     localStorage.setItem('podcast_top_rank_media_data', JSON.stringify(DEFAULT_WEBSITE_DATA));
+
+    // Reset in Supabase if configured
+    const supabase = getSupabaseClient();
+    if (supabase && isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from('website_configs')
+          .upsert({ key: 'website_data', value: DEFAULT_WEBSITE_DATA, updated_at: new Date().toISOString() });
+
+        if (error) throw error;
+        setIsDbConnected(true);
+        setDatabaseError(null);
+      } catch (err: any) {
+        console.error('Failed to reset website configs in Supabase:', err);
+        setDatabaseError(`Supabase Reset Error: ${err.message || String(err)}`);
+      }
+    }
+
     setTimeout(() => {
       setIsSyncing(false);
-    }, 100);
+    }, 150);
   };
 
   const login = (password: string): boolean => {
-    // Accepts common logical administrative passwords for maximum convenience and robustness
     const normalized = password.trim().toLowerCase();
     if (normalized === 'admin' || normalized === 'gettop' || normalized === 'gettopgrowth' || normalized === 'doulot123') {
       setIsAdminLoggedIn(true);
@@ -309,9 +572,18 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
         logout,
         isAdminPanelOpen,
         setAdminPanelOpen,
-        firestoreError,
+        firestoreError: databaseError, // Alias for backward compatibility
+        databaseError,
         clearFirestoreError,
+        clearDatabaseError,
         isSyncing,
+        isDbConnected,
+        bookings,
+        bookingsLoading,
+        fetchBookings,
+        addBooking,
+        deleteBooking,
+        syncWithDatabase
       }}
     >
       {children}

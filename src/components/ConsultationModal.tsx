@@ -31,7 +31,7 @@ interface ConsultationModalProps {
 }
 
 export default function ConsultationModal({ isOpen, onClose, selectedPlanName = '' }: ConsultationModalProps) {
-  const { data } = useWebsiteData();
+  const { data, addBooking } = useWebsiteData();
   const pricingPlans = data.pricingPlans || [];
 
   const activePlatforms = data.bookingPlatforms || {
@@ -107,20 +107,6 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
     setCopiedToken(false);
 
     try {
-      // Save directly to localStorage for instant local database persistence
-      const existingBookings = localStorage.getItem('podcast_top_rank_bookings');
-      let bookingsList: any[] = [];
-      if (existingBookings) {
-        try {
-          bookingsList = JSON.parse(existingBookings);
-          if (!Array.isArray(bookingsList)) {
-            bookingsList = [];
-          }
-        } catch (e) {
-          bookingsList = [];
-        }
-      }
-
       const newBooking = {
         id: tokenVal,
         token: tokenVal,
@@ -136,8 +122,7 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
         createdAt: new Date().toISOString()
       };
 
-      bookingsList.unshift(newBooking);
-      localStorage.setItem('podcast_top_rank_bookings', JSON.stringify(bookingsList));
+      await addBooking(newBooking);
 
       // Send automated email notification to Gmail or Business Mail
       const notificationConfig = data.emailNotification;
