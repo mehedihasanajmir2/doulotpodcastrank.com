@@ -23,8 +23,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useWebsiteData } from '../context/WebsiteContext';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 
 interface ConsultationModalProps {
   isOpen: boolean;
@@ -109,9 +107,22 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
     setCopiedToken(false);
 
     try {
-      // Save directly to Firestore for the admin to review
-      const docRef = doc(db, 'bookings', tokenVal);
-      await setDoc(docRef, {
+      // Save directly to localStorage for instant local database persistence
+      const existingBookings = localStorage.getItem('podcast_top_rank_bookings');
+      let bookingsList: any[] = [];
+      if (existingBookings) {
+        try {
+          bookingsList = JSON.parse(existingBookings);
+          if (!Array.isArray(bookingsList)) {
+            bookingsList = [];
+          }
+        } catch (e) {
+          bookingsList = [];
+        }
+      }
+
+      const newBooking = {
+        id: tokenVal,
         token: tokenVal,
         name: formData.name,
         email: formData.email,
@@ -123,7 +134,10 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
         contactType: formData.contactType,
         contactValue: formData.contactValue,
         createdAt: new Date().toISOString()
-      });
+      };
+
+      bookingsList.unshift(newBooking);
+      localStorage.setItem('podcast_top_rank_bookings', JSON.stringify(bookingsList));
 
       // Send automated email notification to Gmail or Business Mail
       const notificationConfig = data.emailNotification;
@@ -165,25 +179,7 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
         }
       }
     } catch (err) {
-      console.error('Error saving booking to Firestore:', err);
-      try {
-        const errMessage = err instanceof Error ? err.message : String(err);
-        const errInfo = {
-          error: errMessage,
-          operationType: 'write',
-          path: `bookings/${tokenVal}`,
-          authInfo: {
-            userId: null,
-            email: null,
-            emailVerified: null,
-            isAnonymous: null,
-            tenantId: null
-          }
-        };
-        console.error('Firestore Error Info:', JSON.stringify(errInfo));
-      } catch (e) {
-        // Fallback
-      }
+      console.error('Error saving booking to localStorage:', err);
     } finally {
       setLoading(false);
       setSubmitted(true);

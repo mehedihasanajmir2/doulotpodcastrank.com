@@ -1,6 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 import {
   TeamMember,
   PodcastEpisode,
@@ -252,157 +250,31 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
 
   const clearFirestoreError = () => setFirestoreError(null);
 
-  // Subscribe to real-time updates from Firestore
+  // Load local storage and manage state
   useEffect(() => {
-    const docRef = doc(db, 'configs', 'website_data');
-    
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      setFirestoreError(null);
-      if (docSnap.exists()) {
-        const cloudData = docSnap.data() as WebsiteData;
-        const migratedData = migrateWebsiteData(cloudData);
-        
-        // Auto-save the Web3Forms access key if missing, empty, or using the old key in Firestore database configuration
-        let needsUpdate = false;
-        if (!migratedData.emailNotification) {
-          migratedData.emailNotification = {
-            enabled: true,
-            recipientEmail: 'doulotaligettopgrowth@gmail.com',
-            web3formKey: '81e529bf-cc0a-4104-b8c3-def656e8d0fb'
-          };
-          needsUpdate = true;
-        } else if (!migratedData.emailNotification.web3formKey || migratedData.emailNotification.web3formKey === '2fd99b81-d471-4790-8188-68f800316d9f') {
-          migratedData.emailNotification.web3formKey = '81e529bf-cc0a-4104-b8c3-def656e8d0fb';
-          needsUpdate = true;
-        }
-
-        if (needsUpdate && !docSnap.metadata.hasPendingWrites) {
-          setDoc(docRef, migratedData).catch(err => console.error('Error auto-updating config:', err));
-        }
-
-        setData(migratedData);
-        localStorage.setItem('podcast_top_rank_media_data', JSON.stringify(migratedData));
-        console.log('Real-time data synced from Firestore successfully');
-      } else {
-        console.log('No configurations found in Firestore yet. Seeding default/local data...');
-        let initialDataToSeed = DEFAULT_WEBSITE_DATA;
-        const savedData = localStorage.getItem('podcast_top_rank_media_data');
-        if (savedData) {
-          try {
-            initialDataToSeed = migrateWebsiteData(JSON.parse(savedData));
-          } catch (e) {
-            console.error('Failed to parse local data for seeding:', e);
-          }
-        }
-        setDoc(docRef, initialDataToSeed)
-          .then(() => {
-            console.log('Successfully seeded Firestore with default/local website data.');
-          })
-          .catch((err) => {
-            console.error('Error seeding website data to Firestore:', err);
-            // Non-blocking warning since the local storage fallback continues to work perfectly
-            setFirestoreError(`Failed to auto-seed Cloud database: ${err instanceof Error ? err.message : String(err)}. Please try saving your edits manually in the admin console.`);
-          });
-      }
-    }, (error) => {
-      console.error('Error in Firestore real-time listener:', error);
-      
-      // Structured Firestore error formatting for system diagnostic tracing
-      const errMessage = error instanceof Error ? error.message : String(error);
-      setFirestoreError(`Firestore connection error: ${errMessage}`);
-      const errInfo = {
-        error: errMessage,
-        operationType: 'listen',
-        path: 'configs/website_data',
-        authInfo: {
-          userId: null,
-          email: null,
-          emailVerified: null,
-          isAnonymous: null,
-          tenantId: null
-        }
-      };
-      console.error('Firestore Error Info (onSnapshot):', JSON.stringify(errInfo));
-    });
-
     const loggedIn = localStorage.getItem('podcast_top_rank_admin_logged_in');
     if (loggedIn === 'true') {
       setIsAdminLoggedIn(true);
     }
-
-    return () => {
-      unsubscribe();
-    };
   }, []);
 
   const updateData = (newData: Partial<WebsiteData>) => {
-    setFirestoreError(null);
     setIsSyncing(true);
-
     const updated = { ...data, ...newData };
     setData(updated);
     localStorage.setItem('podcast_top_rank_media_data', JSON.stringify(updated));
-
-    // Save to Firestore in the background
-    const docRef = doc(db, 'configs', 'website_data');
-    setDoc(docRef, updated)
-      .then(() => {
-        setIsSyncing(false);
-        setFirestoreError(null);
-      })
-      .catch((err) => {
-        setIsSyncing(false);
-        const errMessage = err instanceof Error ? err.message : String(err);
-        console.error('Error saving updated data to Firestore:', err);
-        setFirestoreError(`Failed to save to Cloud: ${errMessage}`);
-        const errInfo = {
-          error: errMessage,
-          operationType: 'update',
-          path: 'configs/website_data',
-          authInfo: {
-            userId: null,
-            email: null,
-            emailVerified: null,
-            isAnonymous: null,
-            tenantId: null
-          }
-        };
-        console.error('Firestore Error Info (Update):', JSON.stringify(errInfo));
-      });
+    setTimeout(() => {
+      setIsSyncing(false);
+    }, 100);
   };
 
   const resetToDefaults = () => {
-    setFirestoreError(null);
     setIsSyncing(true);
     setData(DEFAULT_WEBSITE_DATA);
     localStorage.setItem('podcast_top_rank_media_data', JSON.stringify(DEFAULT_WEBSITE_DATA));
-
-    // Reset in Firestore as well
-    const docRef = doc(db, 'configs', 'website_data');
-    setDoc(docRef, DEFAULT_WEBSITE_DATA)
-      .then(() => {
-        setIsSyncing(false);
-        setFirestoreError(null);
-      })
-      .catch((err) => {
-        setIsSyncing(false);
-        const errMessage = err instanceof Error ? err.message : String(err);
-        console.error('Error resetting Firestore data to default:', err);
-        setFirestoreError(`Failed to reset Cloud database: ${errMessage}`);
-        const errInfo = {
-          error: errMessage,
-          operationType: 'update',
-          path: 'configs/website_data',
-          authInfo: {
-            userId: null,
-            email: null,
-            emailVerified: null,
-            isAnonymous: null,
-            tenantId: null
-          }
-        };
-        console.error('Firestore Error Info (Reset):', JSON.stringify(errInfo));
-      });
+    setTimeout(() => {
+      setIsSyncing(false);
+    }, 100);
   };
 
   const login = (password: string): boolean => {

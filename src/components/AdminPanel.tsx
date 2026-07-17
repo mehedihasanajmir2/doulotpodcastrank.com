@@ -26,8 +26,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ImageUploader from './ImageUploader';
-import { collection, getDocs, deleteDoc, doc, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 
 const AdminPanelContext = React.createContext<{
   unlockedFields: Record<string, boolean>;
@@ -83,6 +81,7 @@ export default function AdminPanel() {
 
   const [activeTab, setActiveTab] = useState<'hero' | 'about' | 'episodes' | 'pricing' | 'testimonials' | 'team' | 'booking' | 'footer' | 'bookings'>('hero');
   const [successMsg, setSuccessMsg] = useState('');
+  const [isSaveSuccess, setIsSaveSuccess] = useState(false);
 
   const defaultBooking = {
     badgeText: '100% Free Strategy Audit',
@@ -162,69 +161,47 @@ export default function AdminPanel() {
     throw new Error(JSON.stringify(errInfo));
   };
 
-  const fetchBookings = async () => {
+  const fetchBookings = () => {
     setBookingsLoading(true);
     try {
-      const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
-      const list: any[] = [];
-      querySnapshot.forEach((docSnap) => {
-        list.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      setBookings(list);
+      const savedBookings = localStorage.getItem('podcast_top_rank_bookings');
+      if (savedBookings) {
+        const parsed = JSON.parse(savedBookings);
+        if (Array.isArray(parsed)) {
+          setBookings(parsed);
+        } else {
+          setBookings([]);
+        }
+      } else {
+        setBookings([]);
+      }
     } catch (err) {
       console.error('Error fetching bookings:', err);
-      try {
-        handleFirestoreError(err, 'list', 'bookings');
-      } catch (e) {
-        // Fallback catch to prevent uncaught promise rejections if needed
-      }
     } finally {
       setBookingsLoading(false);
     }
   };
 
-  const handleDeleteBooking = async (id: string) => {
+  const handleDeleteBooking = (id: string) => {
     if (window.confirm('Are you sure you want to delete this booking? This action is permanent.')) {
       try {
-        await deleteDoc(doc(db, 'bookings', id));
-        setBookings(prev => prev.filter(b => b.id !== id));
+        const savedBookings = localStorage.getItem('podcast_top_rank_bookings');
+        let list: any[] = [];
+        if (savedBookings) {
+          list = JSON.parse(savedBookings);
+        }
+        const updated = list.filter((b: any) => b.id !== id);
+        localStorage.setItem('podcast_top_rank_bookings', JSON.stringify(updated));
+        setBookings(updated);
       } catch (err) {
         console.error('Error deleting booking:', err);
-        try {
-          handleFirestoreError(err, 'delete', `bookings/${id}`);
-        } catch (e) {
-          // Fallback catch
-        }
       }
     }
   };
 
   useEffect(() => {
     if (!isAdminPanelOpen) return;
-
-    setBookingsLoading(true);
-    const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'));
-    
-    // Establish a real-time listener so bookings appear instantly in the admin panel
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const list: any[] = [];
-      querySnapshot.forEach((docSnap) => {
-        list.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      setBookings(list);
-      setBookingsLoading(false);
-    }, (err) => {
-      console.error('Error listening to bookings:', err);
-      setBookingsLoading(false);
-      try {
-        handleFirestoreError(err, 'list', 'bookings');
-      } catch (e) {
-        // Fallback
-      }
-    });
-
-    return () => unsubscribe();
+    fetchBookings();
   }, [isAdminPanelOpen, activeTab]);
 
   const handleToggleLock = (fieldId: string, label: string) => {
@@ -286,6 +263,7 @@ export default function AdminPanel() {
   if (!isAdminPanelOpen) return null;
 
   const handleSave = () => {
+    setIsSaveSuccess(true);
     updateData({
       logo: localLogo,
       hero: localHero,
@@ -303,8 +281,11 @@ export default function AdminPanel() {
       contactInfo: localContact,
       emailNotification: localEmailNotification,
     });
-    setSuccessMsg('All changes successfully saved!');
-    setTimeout(() => setSuccessMsg(''), 4000);
+    setSuccessMsg('Changes saved instantly!');
+    setTimeout(() => {
+      setSuccessMsg('');
+      setIsSaveSuccess(false);
+    }, 2500);
   };
 
   const handleReset = () => {
@@ -358,23 +339,36 @@ export default function AdminPanel() {
           <AnimatePresence>
             {successMsg && (
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="hidden md:block text-xs bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-bold px-4 py-2 rounded-full"
+                initial={{ opacity: 0, scale: 0.9, y: -5 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -5 }}
+                className="text-[10px] sm:text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-3 py-1.5 rounded-full flex items-center gap-1"
               >
-                {successMsg}
+                <span className="text-emerald-400">✓</span>
+                <span>{successMsg}</span>
               </motion.div>
             )}
           </AnimatePresence>
 
           <button
             onClick={handleSave}
-            disabled={isSyncing}
-            className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold px-4 py-2 text-xs sm:text-sm tracking-wide transition-all shadow-lg shadow-emerald-900/20 active:scale-95"
+            className={`inline-flex items-center gap-1.5 rounded-full font-bold px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm tracking-wide transition-all shadow-lg active:scale-95 ${
+              isSaveSuccess 
+                ? 'bg-emerald-500 text-white shadow-emerald-500/20' 
+                : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-violet-900/10'
+            }`}
           >
-            <Save className={`h-4 w-4 ${isSyncing ? 'animate-bounce' : ''}`} />
-            <span>{isSyncing ? 'Saving...' : 'Save Changes'}</span>
+            {isSaveSuccess ? (
+              <>
+                <span className="text-sm">✓</span>
+                <span>Saved!</span>
+              </>
+            ) : (
+              <>
+                <Save className={`h-4 w-4 ${isSyncing ? 'animate-pulse' : ''}`} />
+                <span>{isSyncing ? 'Saving...' : 'Save Changes'}</span>
+              </>
+            )}
           </button>
 
           <button
