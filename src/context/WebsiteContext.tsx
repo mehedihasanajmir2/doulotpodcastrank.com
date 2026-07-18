@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
 import {
   TeamMember,
@@ -386,10 +386,11 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
           token: b.token,
           name: b.name,
           email: b.email,
-          phone: b.phone,
-          date: b.date,
-          time: b.time,
-          company: b.company,
+          podcastName: b.podcast_name || b.podcastName || 'Not Provided',
+          platform: b.platform || 'Spotify',
+          monthlyDownloads: b.monthly_downloads || b.monthlyDownloads || '0 - 5,000',
+          selectedPlan: b.selected_plan || b.selectedPlan || 'Free Audit',
+          message: b.message || '',
           contactType: b.contact_type || b.contactType,
           contactValue: b.contact_value || b.contactValue,
           createdAt: b.created_at || b.createdAt
@@ -431,10 +432,11 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
           token: booking.token,
           name: booking.name,
           email: booking.email,
-          phone: booking.phone,
-          date: booking.date,
-          time: booking.time,
-          company: booking.company,
+          podcast_name: booking.podcastName,
+          platform: booking.platform,
+          monthly_downloads: booking.monthlyDownloads,
+          selected_plan: booking.selectedPlan,
+          message: booking.message,
           contact_type: booking.contactType,
           contact_value: booking.contactValue,
           created_at: booking.createdAt
@@ -477,13 +479,135 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Initial Sync effect
+  // Keep ref updated to avoid stale state in interval
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
+
+  // Initial Sync effect and Realtime / Polling Setup
   useEffect(() => {
     const loggedIn = localStorage.getItem('podcast_top_rank_admin_logged_in');
     if (loggedIn === 'true') {
       setIsAdminLoggedIn(true);
     }
     syncWithDatabase();
+
+    // 1. Setup Supabase Realtime Subscriptions for immediate (sub-second) updates
+    const supabase = getSupabaseClient();
+    let configChannel: any = null;
+    let bookingsChannel: any = null;
+
+    if (supabase && isSupabaseConfigured()) {
+      try {
+        configChannel = supabase
+          .channel('website_configs_realtime')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'website_configs', filter: 'key=eq.website_data' },
+            (payload: any) => {
+              console.log('Realtime website config update:', payload);
+              if (payload.new && payload.new.value) {
+                const migrated = migrateWebsiteData(payload.new.value);
+                // Only update if it is different from current data
+                if (JSON.stringify(dataRef.current) !== JSON.stringify(migrated)) {
+                  setData(migrated);
+                  localStorage.setItem('podcast_top_rank_media_data', JSON.stringify(migrated));
+                }
+              }
+            }
+          )
+          .subscribe();
+
+        bookingsChannel = supabase
+          .channel('bookings_realtime')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'bookings' },
+            () => {
+              console.log('Realtime bookings update triggered');
+              fetchBookings();
+            }
+          )
+          .subscribe();
+      } catch (e) {
+        console.error('Failed to setup Supabase Realtime:', e);
+      }
+    }
+
+    // 2. Setup short-polling (every 2.5 seconds) as a fallback in case Realtime is not enabled on Supabase dashboard
+    const interval = setInterval(() => {
+      const client = getSupabaseClient();
+      if (!client || !isSupabaseConfigured()) return;
+      
+      const fetchLatestFromDb = async () => {
+        try {
+          // Fetch website data
+          const { data: configData } = await client
+            .from('website_configs')
+            .select('value')
+            .eq('key', 'website_data')
+            .maybeSingle();
+
+          if (configData && configData.value) {
+            const migrated = migrateWebsiteData(configData.value);
+            const currentStr = JSON.stringify(dataRef.current);
+            const nextStr = JSON.stringify(migrated);
+            if (currentStr !== nextStr) {
+              setData(migrated);
+              localStorage.setItem('podcast_top_rank_media_data', nextStr);
+            }
+          }
+
+          // Fetch bookings
+          const { data: cloudBookings } = await client
+            .from('bookings')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (cloudBookings) {
+            const formatted = cloudBookings.map((b: any) => ({
+              id: b.id,
+              token: b.token,
+              name: b.name,
+              email: b.email,
+              podcastName: b.podcast_name || b.podcastName || 'Not Provided',
+              platform: b.platform || 'Spotify',
+              monthlyDownloads: b.monthly_downloads || b.monthlyDownloads || '0 - 5,000',
+              selectedPlan: b.selected_plan || b.selectedPlan || 'Free Audit',
+              message: b.message || '',
+              contactType: b.contact_type || b.contactType,
+              contactValue: b.contact_value || b.contactValue,
+              createdAt: b.created_at || b.createdAt
+            }));
+            
+            setBookings((prev) => {
+              const prevStr = JSON.stringify(prev);
+              const nextStr = JSON.stringify(formatted);
+              if (prevStr !== nextStr) {
+                localStorage.setItem('podcast_top_rank_bookings', nextStr);
+                return formatted;
+              }
+              return prev;
+            });
+          }
+        } catch (e) {
+          console.debug('Polling sync skipped:', e);
+        }
+      };
+
+      fetchLatestFromDb();
+    }, 1000);
+
+    return () => {
+      if (configChannel) {
+        try { supabase?.removeChannel(configChannel); } catch(e){}
+      }
+      if (bookingsChannel) {
+        try { supabase?.removeChannel(bookingsChannel); } catch(e){}
+      }
+      clearInterval(interval);
+    };
   }, []);
 
   const updateData = async (newData: Partial<WebsiteData>) => {
