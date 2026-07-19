@@ -70,6 +70,15 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
   const [loading, setLoading] = useState(false);
   const [generatedToken, setGeneratedToken] = useState('');
   const [copiedToken, setCopiedToken] = useState(false);
+  const [notificationStatus, setNotificationStatus] = useState<{
+    attempted: boolean;
+    web3formsSuccess?: boolean;
+    web3formsError?: string;
+    formSubmitSuccess?: boolean;
+    formSubmitError?: string;
+    recipientEmail?: string;
+    web3formKeyUsed?: string;
+  } | null>(null);
 
   // Synchronize state when modal opens or selectedPlanName / pricingPlans changes
   useEffect(() => {
@@ -128,12 +137,12 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
       const notificationConfig = data.emailNotification || {
         enabled: true,
         recipientEmail: 'service@podcastrankinghub.com',
-        web3formKey: '81e529bf-cc0a-4104-b8c3-def656e8d0fb'
+        web3formKey: 'ca51efb2-cc9b-4c77-a0ac-783b5e5e5131'
       };
       
       const isEnabled = notificationConfig.enabled !== false;
       if (isEnabled) {
-        const targetKey = (notificationConfig.web3formKey || '81e529bf-cc0a-4104-b8c3-def656e8d0fb').trim();
+        const targetKey = (notificationConfig.web3formKey || 'ca51efb2-cc9b-4c77-a0ac-783b5e5e5131').trim();
         const recipientEmail = (notificationConfig.recipientEmail || data.contactInfo?.email || 'service@podcastrankinghub.com').trim();
         
         const emailData = {
@@ -157,6 +166,10 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
         };
 
         let emailSent = false;
+        let w3Success = false;
+        let w3Err = '';
+        let fsSuccess = false;
+        let fsErr = '';
 
         // 1. First attempt via Web3Forms if key is provided
         if (targetKey && targetKey.trim() !== '') {
@@ -177,11 +190,14 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
             if (web3Response.ok && web3Result.success) {
               console.log('Automated email notification sent successfully via Web3Forms!');
               emailSent = true;
+              w3Success = true;
             } else {
               console.warn('Web3Forms response unsuccessful:', web3Result);
+              w3Err = web3Result.message || 'Verification or domain mismatch check failed';
             }
-          } catch (web3Err) {
+          } catch (web3Err: any) {
             console.error('Error sending email via Web3Forms:', web3Err);
+            w3Err = web3Err.message || String(web3Err);
           }
         }
 
@@ -215,13 +231,30 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
             if (fsResponse.ok && fsResult.success) {
               console.log('Automated email notification sent successfully via FormSubmit!');
               emailSent = true;
+              fsSuccess = true;
             } else {
               console.warn('FormSubmit fallback response unsuccessful:', fsResult);
+              fsErr = fsResult.message || 'Awaiting dynamic email confirmation/activation';
             }
-          } catch (fsErr) {
+          } catch (fsErr: any) {
             console.error('Error sending fallback email via FormSubmit:', fsErr);
+            fsErr = fsErr.message || String(fsErr);
           }
         }
+
+        setNotificationStatus({
+          attempted: true,
+          web3formsSuccess: w3Success,
+          web3formsError: w3Err,
+          formSubmitSuccess: fsSuccess,
+          formSubmitError: fsErr,
+          recipientEmail: recipientEmail,
+          web3formKeyUsed: targetKey
+        });
+      } else {
+        setNotificationStatus({
+          attempted: false
+        });
       }
     } catch (err) {
       console.error('Error saving booking to localStorage:', err);
@@ -248,6 +281,7 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
     });
     setGeneratedToken('');
     setCopiedToken(false);
+    setNotificationStatus(null);
     setSubmitted(false);
   };
 
@@ -741,6 +775,102 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
                     Please use this token when contacting us. This helps us recognize your order on our website instantly and serve you faster!
                   </p>
                 </div>
+
+                {/* Email Notification Log Panel */}
+                {notificationStatus && notificationStatus.attempted && (
+                  <div className="mt-6 max-w-md mx-auto bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 text-left space-y-3.5 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-violet-500/50 to-indigo-500/50" />
+                    <div className="flex items-center justify-between border-b border-slate-800/60 pb-2">
+                      <span className="text-[10px] uppercase tracking-wider font-extrabold text-violet-400">
+                        ⚡ Email Notification Engine Log
+                      </span>
+                      <span className="text-[9px] bg-cyan-950/40 text-cyan-400 px-2 py-0.5 rounded-lg border border-cyan-800/30 font-bold font-mono">
+                        Live Diagnostic
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 text-[11px]">
+                      {/* Web3Forms status */}
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="font-bold text-slate-300">1. Web3Forms Dispatcher:</span>
+                        <div className="text-right">
+                          {notificationStatus.web3formsSuccess ? (
+                            <span className="text-emerald-400 font-bold flex items-center gap-1 justify-end">
+                              🟢 Sent Successfully
+                            </span>
+                          ) : (
+                            <span className="text-rose-400 font-bold flex items-center gap-1 justify-end">
+                              🔴 Dispatch Error
+                            </span>
+                          )}
+                          {notificationStatus.web3formKeyUsed && (
+                            <span className="block text-[9px] font-mono text-slate-500 mt-0.5">
+                              Key: {notificationStatus.web3formKeyUsed.substring(0, 8)}... (Bound to Old Registered Email)
+                            </span>
+                          )}
+                          {notificationStatus.web3formsError && (
+                            <span className="block text-[9px] text-rose-400 bg-rose-950/30 border border-rose-900/30 p-1.5 rounded-lg mt-1.5 font-mono leading-relaxed text-left">
+                              Note: {notificationStatus.web3formsError}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* FormSubmit status */}
+                      <div className="flex items-start justify-between gap-3 border-t border-slate-800/40 pt-3">
+                        <span className="font-bold text-slate-300">2. FormSubmit.co Backup:</span>
+                        <div className="text-right">
+                          {notificationStatus.formSubmitSuccess ? (
+                            <span className="text-emerald-400 font-bold flex items-center gap-1 justify-end">
+                              🟢 Backup Sent
+                            </span>
+                          ) : notificationStatus.web3formsSuccess ? (
+                            <span className="text-slate-500 font-medium flex items-center gap-1 justify-end">
+                              ⚪ Standby (Bypassed)
+                            </span>
+                          ) : (
+                            <span className="text-amber-400 font-bold flex items-center gap-1 justify-end">
+                              🟡 Fallback Engaged
+                            </span>
+                          )}
+                          {notificationStatus.recipientEmail && (
+                            <span className="block text-[9px] font-mono text-slate-500 mt-0.5">
+                              To: {notificationStatus.recipientEmail}
+                            </span>
+                          )}
+                          {notificationStatus.formSubmitError && (
+                            <span className="block text-[9px] text-amber-400 bg-amber-950/30 border border-amber-900/30 p-1.5 rounded-lg mt-1.5 font-mono leading-relaxed text-left">
+                              Note: {notificationStatus.formSubmitError}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Highly descriptive help guide specifically in Bangla/English for maximum understanding */}
+                    <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 space-y-2 text-[11px] text-slate-400 leading-relaxed">
+                      <p className="font-bold text-cyan-400 flex items-center gap-1">
+                        💡 ইমেইল নোটিফিকেশন না পাওয়ার কারণ ও সমাধান:
+                      </p>
+                      <ul className="list-decimal pl-4 space-y-1.5 text-[10px] text-slate-300">
+                        <li>
+                          <strong className="text-white">Web3Forms Key এর নিয়ম:</strong> আপনার ব্যবহৃত Web3Forms Key টি (<code className="text-cyan-300 font-mono">{notificationStatus.web3formKeyUsed?.substring(0, 8)}...</code>) যে ইমেইল দিয়ে রেজিস্টার করা, নোটিফিকেশন শুধুমাত্র সেই ইমেইলে যাবে।
+                        </li>
+                        <li>
+                          <strong className="text-white">service@podcastrankinghub.com এ নোটিফিকেশন পেতে:</strong> 
+                          <ol className="list-disc pl-3.5 mt-1 space-y-0.5 text-slate-400 text-[10px]">
+                            <li><a href="https://web3forms.com/" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline inline-flex items-center gap-0.5">web3forms.com ↗</a> এ গিয়ে আপনার নতুন ইমেইল দিয়ে একটি সম্পূর্ণ ফ্রী কি (Key) তৈরি করুন।</li>
+                            <li>আপনার ইমেইল ইনবক্সে Web3Forms থেকে আসা কনফার্মেশন লিংকে ক্লিক করে কি-টি অ্যাক্টিভেট করুন।</li>
+                            <li>এরপর ওয়েবসাইটের Admin Panel এ গিয়ে নতুন কি-টি পেস্ট করে "Save Changes" বাটনে ক্লিক করুন।</li>
+                          </ol>
+                        </li>
+                        <li>
+                          <strong className="text-white">Spam ফোল্ডার চেক করুন:</strong> নতুন কি ব্যবহার করার পর প্রথমবার নোটিফিকেশন ইমেইলটি Spam বা Promotions ফোল্ডারে যেতে পারে। সেখানে মেইলটি পেলে <strong className="text-emerald-400">"Not Spam"</strong> বা <strong className="text-emerald-400">"Report safe"</strong> মার্ক করে দিন।
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
 
                 {/* Contact Actions Section */}
                 <div className="mt-6 max-w-md mx-auto space-y-3">

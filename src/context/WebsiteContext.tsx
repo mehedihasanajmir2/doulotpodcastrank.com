@@ -101,7 +101,8 @@ const migrateWebsiteData = (obj: any): any => {
       .replace(/Doulot Ali Gettop Growth/g, 'Podcast Ranking Hub')
       .replace(/Podcast Ranking Media/g, 'Podcast Ranking Hub')
       .replace(/Gettop Growth/g, 'Podcast Ranking Hub')
-      .replace(/doulotaligettopgrowth@gmail\.com/g, 'service@podcastrankinghub.com');
+      .replace(/doulotaligettopgrowth@gmail\.com/g, 'service@podcastrankinghub.com')
+      .replace(/81e529bf-cc0a-4104-b8c3-def656e8d0fb/g, 'ca51efb2-cc9b-4c77-a0ac-783b5e5e5131');
   } else if (Array.isArray(obj)) {
     return obj.map(migrateWebsiteData);
   } else if (obj !== null && typeof obj === 'object') {
@@ -209,7 +210,7 @@ export const DEFAULT_WEBSITE_DATA: WebsiteData = {
   emailNotification: {
     enabled: true,
     recipientEmail: 'service@podcastrankinghub.com',
-    web3formKey: '81e529bf-cc0a-4104-b8c3-def656e8d0fb',
+    web3formKey: 'ca51efb2-cc9b-4c77-a0ac-783b5e5e5131',
   },
 };
 
