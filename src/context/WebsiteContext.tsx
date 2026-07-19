@@ -116,7 +116,7 @@ const migrateWebsiteData = (obj: any): any => {
   return obj;
 };
 
-const DEFAULT_WEBSITE_DATA: WebsiteData = {
+export const DEFAULT_WEBSITE_DATA: WebsiteData = {
   logo: {
     textTop: 'Podcast',
     textBottom: 'Ranking Hub',
@@ -485,6 +485,12 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
     dataRef.current = data;
   }, [data]);
 
+  // Keep ref updated for Admin Panel Open to skip overwrite during edit
+  const isAdminPanelOpenRef = useRef(isAdminPanelOpen);
+  useEffect(() => {
+    isAdminPanelOpenRef.current = isAdminPanelOpen;
+  }, [isAdminPanelOpen]);
+
   // Initial Sync effect and Realtime / Polling Setup
   useEffect(() => {
     const loggedIn = localStorage.getItem('podcast_top_rank_admin_logged_in');
@@ -507,6 +513,11 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
             { event: '*', schema: 'public', table: 'website_configs', filter: 'key=eq.website_data' },
             (payload: any) => {
               console.log('Realtime website config update:', payload);
+              // Skip background updates if Admin Panel is currently open to prevent locking/overwriting active work
+              if (isAdminPanelOpenRef.current) {
+                console.log('Skipping background configuration update: Admin Panel is open.');
+                return;
+              }
               if (payload.new && payload.new.value) {
                 const migrated = migrateWebsiteData(payload.new.value);
                 // Only update if it is different from current data
@@ -535,27 +546,30 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // 2. Setup short-polling (every 2.5 seconds) as a fallback in case Realtime is not enabled on Supabase dashboard
+    // 2. Setup short-polling (every 5 seconds) as a fallback in case Realtime is not enabled on Supabase dashboard
     const interval = setInterval(() => {
       const client = getSupabaseClient();
       if (!client || !isSupabaseConfigured()) return;
       
       const fetchLatestFromDb = async () => {
         try {
-          // Fetch website data
-          const { data: configData } = await client
-            .from('website_configs')
-            .select('value')
-            .eq('key', 'website_data')
-            .maybeSingle();
+          // If admin panel is open, completely skip config fetching to prevent overwriting user edits in real-time
+          if (!isAdminPanelOpenRef.current) {
+            // Fetch website data
+            const { data: configData } = await client
+              .from('website_configs')
+              .select('value')
+              .eq('key', 'website_data')
+              .maybeSingle();
 
-          if (configData && configData.value) {
-            const migrated = migrateWebsiteData(configData.value);
-            const currentStr = JSON.stringify(dataRef.current);
-            const nextStr = JSON.stringify(migrated);
-            if (currentStr !== nextStr) {
-              setData(migrated);
-              localStorage.setItem('podcast_top_rank_media_data', nextStr);
+            if (configData && configData.value) {
+              const migrated = migrateWebsiteData(configData.value);
+              const currentStr = JSON.stringify(dataRef.current);
+              const nextStr = JSON.stringify(migrated);
+              if (currentStr !== nextStr) {
+                setData(migrated);
+                localStorage.setItem('podcast_top_rank_media_data', nextStr);
+              }
             }
           }
 
@@ -597,7 +611,7 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
       };
 
       fetchLatestFromDb();
-    }, 1000);
+    }, 5000);
 
     return () => {
       if (configChannel) {

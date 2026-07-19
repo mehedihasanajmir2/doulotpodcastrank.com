@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useWebsiteData } from '../context/WebsiteContext';
+import { useWebsiteData, DEFAULT_WEBSITE_DATA } from '../context/WebsiteContext';
 import {
   X,
   Save,
@@ -145,6 +145,7 @@ export default function AdminPanel() {
 
   // States for locking/unlocking edit boxes
   const [unlockedFields, setUnlockedFields] = useState<Record<string, boolean>>({});
+  const [hasInitialized, setHasInitialized] = useState(false);
   const [promptForFieldId, setPromptForFieldId] = useState<{ id: string; label: string } | null>(null);
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -233,29 +234,33 @@ export default function AdminPanel() {
   // Sync local states when admin panel opens or website data is loaded/changed
   useEffect(() => {
     if (isAdminPanelOpen) {
-      setLocalLogo(data.logo);
-      setLocalHero(data.hero);
-      setLocalAbout(data.about);
-      setLocalStats(data.stats);
-      setLocalTeam(data.teamMembers);
-      setLocalEpisodes(data.episodes);
-      setLocalCategories(data.categories);
-      setLocalPricing(data.pricingPlans);
-      setLocalProcess(data.processSteps);
-      setLocalTestimonials(data.testimonials);
-      setLocalTestimonialsImage(data.testimonialsImage || 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=600');
-      setLocalBooking(data.booking || defaultBooking);
-      setLocalBookingPlatforms(data.bookingPlatforms || defaultBookingPlatforms);
-      setLocalContact(data.contactInfo);
-      setLocalEmailNotification(data.emailNotification || { enabled: true, recipientEmail: 'doulotaligettopgrowth@gmail.com', web3formKey: '81e529bf-cc0a-4104-b8c3-def656e8d0fb' });
-      
-      // Clear all unlocked boxes when entering Admin Panel
-      setUnlockedFields({});
+      if (!hasInitialized) {
+        setLocalLogo(data.logo);
+        setLocalHero(data.hero);
+        setLocalAbout(data.about);
+        setLocalStats(data.stats);
+        setLocalTeam(data.teamMembers);
+        setLocalEpisodes(data.episodes);
+        setLocalCategories(data.categories);
+        setLocalPricing(data.pricingPlans);
+        setLocalProcess(data.processSteps);
+        setLocalTestimonials(data.testimonials);
+        setLocalTestimonialsImage(data.testimonialsImage || 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=600');
+        setLocalBooking(data.booking || defaultBooking);
+        setLocalBookingPlatforms(data.bookingPlatforms || defaultBookingPlatforms);
+        setLocalContact(data.contactInfo);
+        setLocalEmailNotification(data.emailNotification || { enabled: true, recipientEmail: 'doulotaligettopgrowth@gmail.com', web3formKey: '81e529bf-cc0a-4104-b8c3-def656e8d0fb' });
+        
+        // Clear all unlocked boxes when entering Admin Panel
+        setUnlockedFields({});
+        setHasInitialized(true);
+      }
     } else {
       // Clear all unlocked boxes when exiting Admin Panel
       setUnlockedFields({});
+      setHasInitialized(false);
     }
-  }, [isAdminPanelOpen, data]);
+  }, [isAdminPanelOpen, data, hasInitialized]);
 
   if (!isAdminPanelOpen) return null;
 
@@ -288,22 +293,22 @@ export default function AdminPanel() {
   const handleReset = () => {
     if (window.confirm('Are you sure you want to reset everything to default? All custom edits will be lost.')) {
       resetToDefaults();
-      // Reload states from the reset context
-      setLocalLogo(data.logo);
-      setLocalHero(data.hero);
-      setLocalAbout(data.about);
-      setLocalStats(data.stats);
-      setLocalTeam(data.teamMembers);
-      setLocalEpisodes(data.episodes);
-      setLocalCategories(data.categories);
-      setLocalPricing(data.pricingPlans);
-      setLocalProcess(data.processSteps);
-      setLocalTestimonials(data.testimonials);
-      setLocalTestimonialsImage(data.testimonialsImage || 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=600');
-      setLocalBooking(data.booking || defaultBooking);
-      setLocalBookingPlatforms(data.bookingPlatforms || defaultBookingPlatforms);
-      setLocalContact(data.contactInfo);
-      setLocalEmailNotification(data.emailNotification || { enabled: true, recipientEmail: 'doulotaligettopgrowth@gmail.com', web3formKey: '81e529bf-cc0a-4104-b8c3-def656e8d0fb' });
+      // Reload states from the default configuration instantly
+      setLocalLogo(DEFAULT_WEBSITE_DATA.logo);
+      setLocalHero(DEFAULT_WEBSITE_DATA.hero);
+      setLocalAbout(DEFAULT_WEBSITE_DATA.about);
+      setLocalStats(DEFAULT_WEBSITE_DATA.stats);
+      setLocalTeam(DEFAULT_WEBSITE_DATA.teamMembers);
+      setLocalEpisodes(DEFAULT_WEBSITE_DATA.episodes);
+      setLocalCategories(DEFAULT_WEBSITE_DATA.categories);
+      setLocalPricing(DEFAULT_WEBSITE_DATA.pricingPlans);
+      setLocalProcess(DEFAULT_WEBSITE_DATA.processSteps);
+      setLocalTestimonials(DEFAULT_WEBSITE_DATA.testimonials);
+      setLocalTestimonialsImage(DEFAULT_WEBSITE_DATA.testimonialsImage || 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=600');
+      setLocalBooking(DEFAULT_WEBSITE_DATA.booking || defaultBooking);
+      setLocalBookingPlatforms(DEFAULT_WEBSITE_DATA.bookingPlatforms || defaultBookingPlatforms);
+      setLocalContact(DEFAULT_WEBSITE_DATA.contactInfo);
+      setLocalEmailNotification(DEFAULT_WEBSITE_DATA.emailNotification || { enabled: true, recipientEmail: 'doulotaligettopgrowth@gmail.com', web3formKey: '81e529bf-cc0a-4104-b8c3-def656e8d0fb' });
       setSuccessMsg('Reset to default data completed!');
       setTimeout(() => setSuccessMsg(''), 4000);
     }
