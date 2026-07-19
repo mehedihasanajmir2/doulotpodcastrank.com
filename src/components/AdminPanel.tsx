@@ -266,6 +266,12 @@ export default function AdminPanel() {
 
   const handleSave = () => {
     setIsSaveSuccess(true);
+    // Clean up empty lines from pricing features list only when saving
+    const cleanedPricing = localPricing.map(plan => ({
+      ...plan,
+      features: plan.features.filter(f => f.trim() !== '')
+    }));
+
     updateData({
       logo: localLogo,
       hero: localHero,
@@ -274,7 +280,7 @@ export default function AdminPanel() {
       teamMembers: localTeam,
       episodes: localEpisodes,
       categories: localCategories,
-      pricingPlans: localPricing,
+      pricingPlans: cleanedPricing,
       processSteps: localProcess,
       testimonials: localTestimonials,
       testimonialsImage: localTestimonialsImage,
@@ -833,7 +839,7 @@ export default function AdminPanel() {
                   </h3>
                   <div className="space-y-4">
                     {localCategories.map((cat, idx) => (
-                      <div key={cat.name} className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+                      <div key={`category-${idx}`} className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
                         <span className="text-xs font-bold text-violet-400">📁 Category {idx + 1}: {cat.name}</span>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
                           <LockedField fieldId={`cat-name-${idx}`} label="📝 Category Name (NAME)">
@@ -890,7 +896,7 @@ export default function AdminPanel() {
                   
                   <div className="space-y-6">
                     {localPricing.map((plan, idx) => (
-                      <div key={plan.name} className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-4 hover:border-violet-500/20 transition-all">
+                      <div key={`pricing-${idx}`} className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-4 hover:border-violet-500/20 transition-all">
                         <span className="text-xs font-bold text-violet-400">💵 Package #{idx + 1}: {plan.name}</span>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <LockedField fieldId={`pricing-name-${idx}`} label="🎁 Plan Name (PLAN NAME)">
@@ -938,7 +944,7 @@ export default function AdminPanel() {
                             value={plan.features.join('\n')}
                             onChange={(e) => {
                               const updated = [...localPricing];
-                              updated[idx].features = e.target.value.split('\n').filter(f => f.trim() !== '');
+                              updated[idx].features = e.target.value.split('\n');
                               setLocalPricing(updated);
                             }}
                             placeholder="e.g.:&#10;5 New Episodes Edited&#10;Free Cover Art Design&#10;Social Media Promotion"
