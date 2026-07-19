@@ -680,8 +680,8 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = (password: string): boolean => {
-    const normalized = password.trim().toLowerCase();
-    if (normalized === 'admin' || normalized === 'gettop' || normalized === 'gettopgrowth' || normalized === 'doulot123') {
+    const trimmed = password.trim();
+    if (trimmed === 'Doulot123@' || trimmed === 'doulot123@') {
       setIsAdminLoggedIn(true);
       setAdminLoginOpen(false);
       setAdminPanelOpen(true);

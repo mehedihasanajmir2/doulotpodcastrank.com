@@ -146,9 +146,6 @@ export default function AdminPanel() {
   // States for locking/unlocking edit boxes
   const [unlockedFields, setUnlockedFields] = useState<Record<string, boolean>>({});
   const [hasInitialized, setHasInitialized] = useState(false);
-  const [promptForFieldId, setPromptForFieldId] = useState<{ id: string; label: string } | null>(null);
-  const [passwordInput, setPasswordInput] = useState('');
-  const [passwordError, setPasswordError] = useState('');
 
   // Supabase Database Config states
   const [localDbUrl, setLocalDbUrl] = useState(() => getSupabaseCredentials()?.url || '');
@@ -204,27 +201,15 @@ export default function AdminPanel() {
 
   const handleToggleLock = (fieldId: string, label: string) => {
     if (unlockedFields[fieldId]) {
-      // If already unlocked, lock it back immediately without password
+      // If already unlocked, lock it back immediately
       setUnlockedFields(prev => ({ ...prev, [fieldId]: false }));
+      setSuccessMsg(`🔒 ${label} is locked.`);
+      setTimeout(() => setSuccessMsg(''), 3000);
     } else {
-      // If locked, open password prompt
-      setPromptForFieldId({ id: fieldId, label });
-      setPasswordInput('');
-      setPasswordError('');
-    }
-  };
-
-  const handleVerifyPassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passwordInput === '1234' || passwordInput === 'admin') {
-      if (promptForFieldId) {
-        setUnlockedFields(prev => ({ ...prev, [promptForFieldId.id]: true }));
-      }
-      setPromptForFieldId(null);
-      setPasswordInput('');
-      setPasswordError('');
-    } else {
-      setPasswordError('Incorrect password! Try "1234" or "admin".');
+      // If locked, unlock it immediately and show success message
+      setUnlockedFields(prev => ({ ...prev, [fieldId]: true }));
+      setSuccessMsg(`🔓 ${label} unlocked successfully!`);
+      setTimeout(() => setSuccessMsg(''), 4000);
     }
   };
 
@@ -1780,68 +1765,8 @@ export default function AdminPanel() {
         </button>
       </div>
 
-      {/* Password Prompt Modal */}
-      <AnimatePresence>
-        {promptForFieldId && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 15 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 15 }}
-              className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-5"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-violet-600/10 text-violet-400">
-                  <Lock className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white tracking-tight">Unlock Field</h3>
-                  <p className="text-xs text-slate-400">You are unlocking: <span className="text-violet-400 font-semibold">{promptForFieldId.label}</span></p>
-                </div>
-              </div>
+      {/* Password Prompt Modal is no longer needed since lock/unlock is instantaneous */}
 
-              <form onSubmit={handleVerifyPassword} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">Enter Password</label>
-                  <input
-                    type="password"
-                    autoFocus
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full rounded-xl bg-slate-950 border border-slate-800 px-4 py-3 text-sm text-white focus:border-violet-500 focus:outline-none placeholder:text-slate-700 font-bold"
-                  />
-                  {passwordError && (
-                    <p className="text-xs text-rose-400 font-medium">{passwordError}</p>
-                  )}
-                  <p className="text-[10px] text-slate-500 italic">💡 Password is "1234" or "admin".</p>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setPromptForFieldId(null)}
-                    className="rounded-xl px-4 py-2.5 text-xs font-bold text-slate-400 hover:text-white transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold px-5 py-2.5 text-xs tracking-wide transition-all active:scale-95 shadow-lg shadow-violet-900/30"
-                  >
-                    Verify & Unlock
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
     </AdminPanelContext.Provider>
   );

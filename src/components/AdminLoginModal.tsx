@@ -19,7 +19,7 @@ export default function AdminLoginModal() {
     if (success) {
       setPassword('');
     } else {
-      setError('ভুল পাসওয়ার্ড! অনুগ্রহ করে আবার চেষ্টা করুন। (পাসওয়ার্ডটি হলো: admin)');
+      setError('ভুল পাসওয়ার্ড! অনুগ্রহ করে আবার চেষ্টা করুন।');
     }
   };
 
@@ -99,12 +99,6 @@ export default function AdminLoginModal() {
                 <span>{error}</span>
               </motion.div>
             )}
-
-            {/* Helper Hint */}
-            <div className="rounded-xl bg-slate-950/30 border border-slate-800/50 p-3 text-xs text-slate-400 space-y-1">
-              <span className="font-semibold text-slate-300 block">💡 পাসওয়ার্ড ইঙ্গিত:</span>
-              <p>ওয়েবসাইট এডিট করতে পাসওয়ার্ড হিসেবে <code className="bg-slate-950 px-1 py-0.5 rounded text-violet-400 font-mono text-[11px]">admin</code> ব্যবহার করুন।</p>
-            </div>
 
             {/* Submit button */}
             <button
