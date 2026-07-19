@@ -125,14 +125,44 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
       await addBooking(newBooking);
 
       // Send automated email notification to Gmail or Business Mail
-      const notificationConfig = data.emailNotification;
-      if (notificationConfig?.enabled) {
-        // Use the configured Web3Forms Access Key, or fallback to a standard helper key if available.
-        // Web3Forms keys are completely free, so the admin can generate their own and save it in the Admin Panel
-        const targetKey = notificationConfig.web3formKey;
-        if (targetKey) {
+      const notificationConfig = data.emailNotification || {
+        enabled: true,
+        recipientEmail: 'service@podcastrankinghub.com',
+        web3formKey: '81e529bf-cc0a-4104-b8c3-def656e8d0fb'
+      };
+      
+      const isEnabled = notificationConfig.enabled !== false;
+      if (isEnabled) {
+        const targetKey = (notificationConfig.web3formKey || '81e529bf-cc0a-4104-b8c3-def656e8d0fb').trim();
+        const recipientEmail = (notificationConfig.recipientEmail || data.contactInfo?.email || 'service@podcastrankinghub.com').trim();
+        
+        const emailData = {
+          subject: `🔥 New Order/Booking [${tokenVal}] Placed by ${formData.name}`,
+          from_name: 'Podcast Ranking Hub Website Notification',
+          name: formData.name,
+          email: formData.email,
+          message: `New booking submitted by ${formData.name} (${formData.email}) with Token [${tokenVal}]. Preferred Contact: ${formData.contactType} (${formData.contactValue}). Selected Plan: ${formData.selectedPlan}. Podcast Name: ${formData.podcastName || 'Not Provided'}. Target Platform: ${formData.platform}. Monthly Downloads: ${formData.monthlyDownloads}. Message: ${formData.message || 'No goals provided.'}`,
+          "Booking Token": tokenVal,
+          "Client Name": formData.name,
+          "Client Email": formData.email,
+          "Preferred Contact Method": formData.contactType,
+          "Contact Account/Value": formData.contactValue,
+          "Selected Package/Interest": formData.selectedPlan,
+          "Podcast Name": formData.podcastName || 'Not Provided',
+          "Target Platform": formData.platform,
+          "Current Monthly Downloads": formData.monthlyDownloads,
+          "Client Message/Goals": formData.message || 'No goals provided.',
+          "Timestamp": new Date().toLocaleString(),
+          "Go to Admin Panel": window.location.origin
+        };
+
+        let emailSent = false;
+
+        // 1. First attempt via Web3Forms if key is provided
+        if (targetKey && targetKey.trim() !== '') {
           try {
-            await fetch('https://api.web3forms.com/submit', {
+            console.log('Sending email notification via Web3Forms with key:', targetKey);
+            const web3Response = await fetch('https://api.web3forms.com/submit', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -140,9 +170,34 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
               },
               body: JSON.stringify({
                 access_key: targetKey,
-                subject: `🔥 New Order/Booking [${tokenVal}] Placed by ${formData.name}`,
-                from_name: 'Podcast Ranking Hub Website Notification',
-                title: `New Strategy Session Booking [${tokenVal}]`,
+                ...emailData
+              })
+            });
+            const web3Result = await web3Response.json();
+            if (web3Response.ok && web3Result.success) {
+              console.log('Automated email notification sent successfully via Web3Forms!');
+              emailSent = true;
+            } else {
+              console.warn('Web3Forms response unsuccessful:', web3Result);
+            }
+          } catch (web3Err) {
+            console.error('Error sending email via Web3Forms:', web3Err);
+          }
+        }
+
+        // 2. Fallback to FormSubmit.co using direct recipient email if Web3Forms is bypassed or failed
+        if (!emailSent && recipientEmail) {
+          try {
+            console.log('Attempting fallback email notification via FormSubmit.co to:', recipientEmail);
+            const fsResponse = await fetch(`https://formsubmit.co/ajax/${recipientEmail.trim()}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({
+                _subject: `🔥 New Order/Booking [${tokenVal}] Placed by ${formData.name}`,
+                _template: 'table', // Uses FormSubmit's neat tabular email template
                 "Booking Token": tokenVal,
                 "Client Name": formData.name,
                 "Client Email": formData.email,
@@ -153,13 +208,18 @@ export default function ConsultationModal({ isOpen, onClose, selectedPlanName = 
                 "Target Platform": formData.platform,
                 "Current Monthly Downloads": formData.monthlyDownloads,
                 "Client Message/Goals": formData.message || 'No goals provided.',
-                "Timestamp": new Date().toLocaleString(),
-                "Go to Admin Panel": window.location.origin
+                "Submitted At": new Date().toLocaleString()
               })
             });
-            console.log('Automated email notification sent successfully!');
-          } catch (emailErr) {
-            console.error('Error sending email notification:', emailErr);
+            const fsResult = await fsResponse.json();
+            if (fsResponse.ok && fsResult.success) {
+              console.log('Automated email notification sent successfully via FormSubmit!');
+              emailSent = true;
+            } else {
+              console.warn('FormSubmit fallback response unsuccessful:', fsResult);
+            }
+          } catch (fsErr) {
+            console.error('Error sending fallback email via FormSubmit:', fsErr);
           }
         }
       }

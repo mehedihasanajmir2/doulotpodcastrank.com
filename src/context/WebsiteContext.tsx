@@ -100,7 +100,8 @@ const migrateWebsiteData = (obj: any): any => {
       .replace(/PodcastTopRankMedia/g, 'Podcast Ranking Hub')
       .replace(/Doulot Ali Gettop Growth/g, 'Podcast Ranking Hub')
       .replace(/Podcast Ranking Media/g, 'Podcast Ranking Hub')
-      .replace(/Gettop Growth/g, 'Podcast Ranking Hub');
+      .replace(/Gettop Growth/g, 'Podcast Ranking Hub')
+      .replace(/doulotaligettopgrowth@gmail\.com/g, 'service@podcastrankinghub.com');
   } else if (Array.isArray(obj)) {
     return obj.map(migrateWebsiteData);
   } else if (obj !== null && typeof obj === 'object') {
@@ -196,7 +197,7 @@ export const DEFAULT_WEBSITE_DATA: WebsiteData = {
     quoteImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'
   },
   contactInfo: {
-    email: 'doulotaligettopgrowth@gmail.com',
+    email: 'service@podcastrankinghub.com',
     phone: '+880 1765-068860',
     address: 'Khoksa, Kushtia, Bangladesh',
     facebook: '#',
@@ -207,7 +208,7 @@ export const DEFAULT_WEBSITE_DATA: WebsiteData = {
   },
   emailNotification: {
     enabled: true,
-    recipientEmail: 'doulotaligettopgrowth@gmail.com',
+    recipientEmail: 'service@podcastrankinghub.com',
     web3formKey: '81e529bf-cc0a-4104-b8c3-def656e8d0fb',
   },
 };
@@ -380,21 +381,35 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
 
       if (cloudBookings) {
+        // Load local bookings to merge and preserve high-fidelity client inputs (like messages)
+        // in case the cloud table has not been fully migrated yet
+        const saved = localStorage.getItem('podcast_top_rank_bookings');
+        let localList: any[] = [];
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) localList = parsed;
+          } catch (e) {}
+        }
+
         // Map database underscored keys back to camelCase for UI compatibility if needed, or support both
-        const formatted = cloudBookings.map((b: any) => ({
-          id: b.id,
-          token: b.token,
-          name: b.name,
-          email: b.email,
-          podcastName: b.podcast_name || b.podcastName || 'Not Provided',
-          platform: b.platform || 'Spotify',
-          monthlyDownloads: b.monthly_downloads || b.monthlyDownloads || '0 - 5,000',
-          selectedPlan: b.selected_plan || b.selectedPlan || 'Free Audit',
-          message: b.message || '',
-          contactType: b.contact_type || b.contactType,
-          contactValue: b.contact_value || b.contactValue,
-          createdAt: b.created_at || b.createdAt
-        }));
+        const formatted = cloudBookings.map((b: any) => {
+          const matchedLocal = localList.find((l: any) => l.id === b.id);
+          return {
+            id: b.id,
+            token: b.token,
+            name: b.name,
+            email: b.email,
+            podcastName: b.podcast_name || b.podcastName || matchedLocal?.podcastName || 'Not Provided',
+            platform: b.platform || matchedLocal?.platform || 'Spotify',
+            monthlyDownloads: b.monthly_downloads || b.monthlyDownloads || matchedLocal?.monthlyDownloads || '0 - 5,000',
+            selectedPlan: b.selected_plan || b.selectedPlan || matchedLocal?.selectedPlan || 'Free Audit',
+            message: b.message || matchedLocal?.message || '',
+            contactType: b.contact_type || b.contactType || matchedLocal?.contactType,
+            contactValue: b.contact_value || b.contactValue || matchedLocal?.contactValue,
+            createdAt: b.created_at || b.createdAt
+          };
+        });
 
         setBookings(formatted);
         localStorage.setItem('podcast_top_rank_bookings', JSON.stringify(formatted));
@@ -427,23 +442,49 @@ export function WebsiteProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabaseClient();
     if (supabase && isSupabaseConfigured()) {
       try {
-        const { error } = await supabase.from('bookings').insert({
+        // Construct base payload compatible with older, simplified and custom bookings tables
+        const basePayload: any = {
           id: booking.id,
           token: booking.token,
           name: booking.name,
           email: booking.email,
+          contact_type: booking.contactType,
+          contact_value: booking.contactValue,
+          created_at: booking.createdAt,
+          // Extract date and time fields to support legacy/custom scheduling schemas that make these NOT NULL
+          date: booking.createdAt ? booking.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+          time: booking.createdAt ? booking.createdAt.split('T')[1].substring(0, 5) : new Date().toISOString().split('T')[1].substring(0, 5)
+        };
+
+        const optionalPayload = {
           podcast_name: booking.podcastName,
           platform: booking.platform,
           monthly_downloads: booking.monthlyDownloads,
           selected_plan: booking.selectedPlan,
-          message: booking.message,
-          contact_type: booking.contactType,
-          contact_value: booking.contactValue,
-          created_at: booking.createdAt
+          message: booking.message
+        };
+
+        // Try inserting with all fields first
+        const { error } = await supabase.from('bookings').insert({
+          ...basePayload,
+          ...optionalPayload
         });
 
-        if (error) throw error;
-        console.log('Booking successfully saved to Supabase!');
+        if (error) {
+          console.warn('Initial high-fidelity booking save failed. Checking for schema mismatch:', error);
+          
+          // If insert fails due to missing optional columns, fallback immediately to inserting minimal base fields
+          if (error.code === 'PGRST204' || String(error.message).includes('column')) {
+            console.log('Retrying insert with minimal legacy compatible fields...');
+            const { error: retryError } = await supabase.from('bookings').insert(basePayload);
+            if (retryError) throw retryError;
+            console.log('Booking saved successfully with minimal schema fallback!');
+          } else {
+            throw error;
+          }
+        } else {
+          console.log('Booking successfully saved to Supabase with all fields!');
+        }
       } catch (err) {
         console.error('Failed to save booking to Supabase, fell back to local storage:', err);
       }

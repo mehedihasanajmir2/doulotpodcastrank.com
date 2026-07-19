@@ -133,6 +133,14 @@ CREATE TABLE IF NOT EXISTS bookings (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- SAFE COLUMN ALTERATIONS (Run this if you already have an existing bookings table and want to add missing columns without losing data):
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS podcast_name TEXT;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS platform TEXT;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS monthly_downloads TEXT;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS selected_plan TEXT;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS message TEXT;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
 -- Enable Row Level Security (RLS) for Bookings
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public read and write access for bookings" ON bookings;
